@@ -1,6 +1,6 @@
 // 소모품 아이콘 — 유닛과 같은 두꺼운 선화·단색 채색 규칙을 따른다 (viewBox 0 0 64 64)
 
-const OUT = '#2B2B3A';
+const OUT = '#25314A';
 const wrap = (inner) => `<svg class="item-svg" viewBox="0 0 64 64" aria-hidden="true"><g stroke="${OUT}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">${inner}</g></svg>`;
 
 const ART = {
