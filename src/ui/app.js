@@ -51,6 +51,7 @@ export function startApp(root) {
       run,
       backgroundId: meta.selectedBackground,
       onStartBattle: () => goBattle(),
+      onCodex: () => swap(() => renderCodex(root, { onBack: goShop })),
       onQuit: () => goLobby(),
     }));
   }
