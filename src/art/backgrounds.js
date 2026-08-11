@@ -41,7 +41,8 @@ function environmentDecor(bgId, p, horizon) {
 export function backgroundSvg(bgId) {
   const bg = backgroundById(bgId);
   const p = bg.palette;
-  const horizon = 330;
+  // 지평선을 높여 링의 모든 몬스터가 하늘이 아닌 지면 위에 서도록 한다.
+  const horizon = 190;
   const openSky = !['bg_cave', 'bg_void'].includes(bgId);
   const clouds = openSky ? `<g fill="#FFFFFF" opacity="${bgId === 'bg_snow' ? 0.62 : 0.38}">
     <ellipse cx="238" cy="112" rx="96" ry="31"/><ellipse cx="302" cy="122" rx="72" ry="24"/>

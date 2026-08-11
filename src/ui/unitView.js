@@ -20,8 +20,8 @@ export function sprite(artKey, extraClass = '') {
   </svg>`;
 }
 
-const ICO_ATK = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 L14 10 M12 4 h8 v8 M20 4 L10 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
-const ICO_HP = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.6-7-9.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 7 3.4c0 5-7 9.6-7 9.6Z" fill="currentColor"/></svg>';
+const ICO_ATK = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m20.5 3.5-3.8.8-9.4 9.4 3 3 9.4-9.4Z" fill="#F7F2E8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m6.2 12.5 5.3 5.3M4.5 15l4.5 4.5M5.5 19l-2 2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const ICO_HP = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.1-8-11A5 5 0 0 1 12 6a5 5 0 0 1 8 4c0 5.9-8 11-8 11Z" fill="currentColor" stroke="#25314A" stroke-width="1.7" stroke-linejoin="round"/></svg>';
 const ICO_SHIELD = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.2-3 7.4-7 9-4-1.6-7-4.8-7-9V6Z" fill="currentColor"/></svg>';
 const ICO_MANA = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 4.2 6 7.9 6 11.2A6 6 0 0 1 6 14.2C6 10.9 9 7.2 12 3Z" fill="currentColor"/></svg>';
 export const ICONS = { atk: ICO_ATK, hp: ICO_HP, shield: ICO_SHIELD, mana: ICO_MANA };
@@ -29,10 +29,9 @@ export const ICONS = { atk: ICO_ATK, hp: ICO_HP, shield: ICO_SHIELD, mana: ICO_M
 // 공격력·체력·보호막·마나 아이콘은 서로 다른 형태를 쓰고 항상 숫자를 병기한다 (13.3)
 // 마나는 마나 유닛만 표시한다 (5.4절)
 export function statChips({ atk, hp, maxHp, shield = 0, manaUnit = false, mana = 0, maxMana = 10 }) {
-  const hpText = maxHp != null && hp !== maxHp ? `${hp}<span class="chip-sub">/${maxHp}</span>` : `${hp}`;
   return `<div class="chips">
     <span class="chip chip-atk" title="공격력">${ICO_ATK}<span class="v">${atk}</span></span>
-    <span class="chip chip-hp" title="체력">${ICO_HP}<span class="v">${hpText}</span></span>
+    <span class="chip chip-hp" title="현재 체력">${ICO_HP}<span class="v">${hp}</span></span>
     ${shield > 0 ? `<span class="chip chip-shield" title="보호막">${ICO_SHIELD}<span class="v">${shield}</span></span>` : ''}
     ${manaUnit ? `<span class="chip chip-mana" title="마나">${ICO_MANA}<span class="v">${mana}<span class="chip-sub">/${maxMana}</span></span></span>` : ''}
   </div>`;

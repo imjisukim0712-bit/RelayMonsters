@@ -31,7 +31,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       };
       return detailPanel(fake, {
         extra: `<div class="detail-actions detail-inline-actions">
-          <span class="detail-price"><b>${offer.price}</b>G</span>
+          <span class="detail-price"><b>${offer.price}</b></span>
           <button class="btn primary" id="detailBuyBtn">구매</button>
         </div>`,
       });
@@ -41,7 +41,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       return detailPanel(unit, {
         extra: `<div class="detail-actions detail-inline-actions">
           <span class="detail-owned">링 ${run.ring.indexOf(unit) + 1}번 슬롯</span>
-          <button class="btn ghost" id="detailSellBtn">판매 +${sellValue(unit)}G</button>
+          <button class="btn ghost" id="detailSellBtn">판매 +${sellValue(unit)}</button>
         </div>`,
       });
     }
@@ -99,7 +99,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
             <b>몬스터 상점</b>
             <small>몬스터를 선택하거나 링으로 끌어오세요</small>
           </div>
-          <button class="btn tiny reroll-btn" id="rerollBtn">↻ 리롤 <b>${REROLL_PRICE}G</b></button>
+          <button class="btn tiny reroll-btn" id="rerollBtn">↻ 리롤 <b>${REROLL_PRICE}</b></button>
         </div>
         <div class="shop-market-body">
           <div class="shop-units" id="shopUnits">
@@ -160,7 +160,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       <div class="ped-meta">
         ${statChips({ atk, hp })}
         <div class="ped-name">${sp.name}</div>
-        <div class="ped-price"><b>${offer.price}</b>G</div>
+        <div class="ped-price"><b>${offer.price}</b></div>
       </div>
     </div>`;
   }
@@ -170,7 +170,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     return `<div class="item-card" data-oid="${offer.oid}" data-kind="${it.kind}">
       <div class="item-art">${itemSprite(it.art)}</div>
       <div class="item-meta">
-        <div class="item-name">${it.name}<span class="item-price">${offer.price}G</span></div>
+        <div class="item-name">${it.name}<span class="item-price">${offer.price}</span></div>
         <div class="item-desc">${it.desc}</div>
       </div>
     </div>`;
@@ -185,7 +185,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     const n = run.ring.length;
     if (!n) return;
     const cx = rect.width / 2;
-    const cy = rect.height / 2;
+    const cy = rect.height * 0.62;
     const maxUw = Math.min(112, Math.max(64, rect.width / 4.2));
     const spread = n <= 2 ? 0.5 : n === 3 ? 0.78 : 1;
     const rx = Math.max(maxUw * 1.1, Math.min(rect.width / 2 - maxUw * 0.75, 330) * spread);
@@ -403,7 +403,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     if (!u) return;
     const sp = speciesById(u.speciesId);
     const ok = await confirmDialog(
-      `<b>${sp.name}</b> (Lv${unitLevel(u)} · ${unitAtk(u)}/${unitHp(u)}) 을 판매합니다.<br>환급 <b>${sellValue(u)}G</b>`,
+      `<b>${sp.name}</b> (Lv${unitLevel(u)} · ${unitAtk(u)}/${unitHp(u)}) 을 판매합니다.<br>환급 <b>${sellValue(u)}</b>`,
       { okText: '판매' },
     );
     if (!ok) { rerender(); return; }
@@ -434,7 +434,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       if (!offer) return;
       const fake = { id: 'preview', speciesId: offer.speciesId, exp: offer.exp, permBuff: { atk: 0, hp: 0 }, granted: [] };
       modal(detailPanel(fake, {
-        extra: `<div class="detail-actions"><button class="btn primary" id="buyNow">${offer.price}G 구매</button></div>`,
+        extra: `<div class="detail-actions"><button class="btn primary" id="buyNow">${offer.price} 구매</button></div>`,
       })).box.addEventListener('click', (e) => {
         if (e.target.id === 'buyNow') {
           report(buyUnit(run, offer.oid));
@@ -448,7 +448,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     if (!u) return;
     const m = modal(detailPanel(u, {
       extra: `<div class="detail-actions">
-        <button class="btn ghost" id="sellNow">판매 +${sellValue(u)}G</button>
+        <button class="btn ghost" id="sellNow">판매 +${sellValue(u)}</button>
       </div>`,
     }));
     m.box.addEventListener('click', (e) => {
@@ -471,7 +471,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
 
     if (it.kind === 'run') {
       if (it.oncePerGame) {
-        const ok = await confirmDialog(`<b>${it.name}</b> · ${it.desc}<br>게임당 1회만 구매할 수 있습니다.`, { okText: `${offer.price}G 사용` });
+        const ok = await confirmDialog(`<b>${it.name}</b> · ${it.desc}<br>게임당 1회만 구매할 수 있습니다.`, { okText: `${offer.price} 사용` });
         if (!ok) return;
       }
       applyItem(oid, null);

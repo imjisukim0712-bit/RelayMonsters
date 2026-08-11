@@ -1351,3 +1351,84 @@ html, body {
   .shop-side { display: grid; grid-template-columns: minmax(0, 1fr) 86px; }
   .pedestal { width: 116px; min-width: 116px; }
 }
+
+/* ── Stat crest refinement ──────────────────────────────────────
+   Match the hand-drawn HUD: a sword over a gold attack medallion and a
+   standalone red heart. Both carry only the current numeric value. */
+.chips {
+  align-items: center;
+  gap: 7px;
+}
+.chip-atk,
+.chip-hp {
+  position: relative;
+  width: 43px;
+  min-width: 43px;
+  height: 41px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 0;
+  box-shadow: none;
+  line-height: 1;
+}
+.chip-atk {
+  border: 3px solid var(--out);
+  border-radius: 50%;
+  background: #E5A437;
+  color: var(--out);
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.28), 0 2px 0 rgba(37,49,74,.22);
+}
+.chip-atk .ico {
+  position: absolute;
+  left: -11px;
+  top: -10px;
+  width: 25px;
+  height: 25px;
+  color: #5f493c;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 2px 0 rgba(37,49,74,.24));
+}
+.chip-atk .v,
+.chip-hp .v {
+  position: relative;
+  z-index: 2;
+  font-size: 18px;
+  font-weight: 1000;
+  letter-spacing: -.04em;
+}
+.chip-atk .v {
+  color: #17223a;
+  text-shadow: 0 1px 0 rgba(255,255,255,.72);
+}
+.chip-hp {
+  border: 0;
+  background: transparent;
+  color: #F04432;
+}
+.chip-hp .ico {
+  position: absolute;
+  inset: -4px -5px -5px;
+  width: 52px;
+  height: 52px;
+  color: #F04432;
+  filter: drop-shadow(0 2px 0 rgba(37,49,74,.18));
+}
+.chip-hp .v {
+  color: #fff;
+  text-shadow: 0 2px 0 #a92723, 1px 0 0 #a92723, -1px 0 0 #a92723;
+}
+.chip-hp .chip-sub { display: none !important; }
+.unit.hurt .chip-hp { background: transparent; filter: saturate(1.2) brightness(1.05); }
+
+.unit.tiny-unit .chip-atk,
+.unit.tiny-unit .chip-hp {
+  width: 35px;
+  min-width: 35px;
+  height: 34px;
+  padding: 0;
+}
+.unit.tiny-unit .chip-atk .ico { width: 21px; height: 21px; left: -9px; top: -8px; }
+.unit.tiny-unit .chip-hp .ico { width: 44px; height: 44px; inset: -4px; }
+.unit.tiny-unit .chip-atk .v,
+.unit.tiny-unit .chip-hp .v { font-size: 15px; }
