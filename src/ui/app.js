@@ -46,8 +46,10 @@ export function startApp(root) {
 
   function goShop() {
     if (!run) { run = newRun(); saveRun(run); }
+    const meta = getMeta();
     swap(() => renderShop(root, {
       run,
+      backgroundId: meta.selectedBackground,
       onStartBattle: () => goBattle(),
       onQuit: () => goLobby(),
     }));
