@@ -157,7 +157,7 @@ export function playBattle(root, {
     const atk = node.querySelector('.chip-atk .v');
     const hp = node.querySelector('.chip-hp .v');
     if (atk) atk.textContent = u.atk;
-    if (hp) hp.innerHTML = `${u.hp}<span class="chip-sub">/${u.maxHp}</span>`;
+    if (hp) hp.textContent = u.hp;
     let sh = node.querySelector('.chip-shield');
     if (u.shield > 0) {
       if (!sh) {
