@@ -21,6 +21,18 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
   let selectedItem = null; // 대상 지정 대기 중인 소모품
   let selectedOfferId = run.shop.units[0]?.oid || null;
   let selectedUnitId = null;
+  const formationSlots = [
+    { x: .86, y: .57 },
+    { x: .66, y: .31 },
+    { x: .42, y: .33 },
+    { x: .22, y: .60 },
+    { x: .42, y: .86 },
+    { x: .66, y: .86 },
+  ];
+  const formationSpot = (rect, index) => ({
+    x: rect.width * formationSlots[index % formationSlots.length].x,
+    y: rect.height * formationSlots[index % formationSlots.length].y,
+  });
 
   function selectedDetail() {
     const offer = run.shop.units.find((o) => o.oid === selectedOfferId);
@@ -187,19 +199,10 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     const rect = stage.getBoundingClientRect();
     const n = run.ring.length;
     if (!n) return;
-    const cx = rect.width / 2;
-    const cy = rect.height * 0.62;
-    const maxUw = Math.min(112, Math.max(64, rect.width / 4.2));
-    const spread = n <= 2 ? 0.5 : n === 3 ? 0.78 : 1;
-    const rx = Math.max(maxUw * 1.1, Math.min(rect.width / 2 - maxUw * 0.75, 330) * spread);
-    const ry = Math.max(52, Math.min((rect.height - maxUw * 1.5) / 2, 120));
+    const maxUw = Math.min(184, Math.max(76, rect.width * .14));
 
-    // 슬롯 좌표를 먼저 구하고, 가장 가까운 두 슬롯 간격에서 유닛 표시 크기를 역산한다.
-    const at = (i) => {
-      const a = ((-i * 360) / n) * (Math.PI / 180);
-      return { x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry };
-    };
-    const spots = run.ring.map((_, i) => at(i));
+    // 보유 수가 적어도 스케치의 6개 기준 슬롯 좌표는 변하지 않는다.
+    const spots = run.ring.map((_, i) => formationSpot(rect, i));
     let minDist = Infinity;
     for (let i = 0; i < spots.length; i++) {
       for (let j = i + 1; j < spots.length; j++) {
@@ -216,7 +219,8 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       const wrap = document.createElement('div');
       wrap.innerHTML = unitStand(view, {
         showName: !compact, slotLabel: i + 1, id: u.id, front: i === 0,
-        selected: u.id === selectedUnitId, className: 'draggable', flip: false, showLevel: false,
+        selected: u.id === selectedUnitId, className: 'draggable', flip: false,
+        showLevel: false, showLevelBadge: true,
       });
       const node = wrap.firstElementChild;
       node.classList.add('ring-unit');
@@ -378,16 +382,17 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
         return;
       }
       if (dropKind === 'ring' || target?.id === 'ringStage') {
-        // 링 위 각도로 새 순서 계산
+        // 스케치의 고정 6슬롯 중 현재 보유 슬롯과 가장 가까운 위치로 순서를 계산한다.
         const stage = qs('#ringStage', root);
         const rect = stage.getBoundingClientRect();
-        const ang = Math.atan2(
-          (e.clientY - (rect.top + rect.height / 2)) / 0.86,
-          e.clientX - (rect.left + rect.width / 2),
-        );
-        const n = Math.max(1, run.ring.length);
-        let idx = Math.round((-ang * 180) / Math.PI / (360 / n));
-        idx = ((idx % n) + n) % n;
+        const local = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        let idx = 0;
+        let nearest = Infinity;
+        run.ring.forEach((_, i) => {
+          const spot = formationSpot(rect, i);
+          const dist = Math.hypot(local.x - spot.x, local.y - spot.y);
+          if (dist < nearest) { nearest = dist; idx = i; }
+        });
         report(reorderRing(run, id, idx));
         rerender();
       }

@@ -1538,3 +1538,248 @@ html, body {
   .shop-scene .hud-right { gap: 5px; }
   .codex-button, .shop-scene .icon-btn.utility { width: 44px; height: 44px; }
 }
+
+/* ── Exact 2048×1152 reference geometry ─────────────────────────
+   Desktop rectangles are normalized from the supplied 16:9 sketch. */
+.unit-level-badge {
+  position: absolute;
+  left: 50%;
+  top: -28px;
+  z-index: 7;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--out);
+  white-space: nowrap;
+  text-shadow: 0 2px 0 rgba(255,255,255,.9);
+}
+.unit-level-badge b { font-size: 17px; font-weight: 1000; }
+.unit-level-badge > span {
+  width: 52px;
+  height: 9px;
+  overflow: hidden;
+  border: 2px solid var(--out);
+  border-radius: 3px;
+  background: rgba(255,248,232,.9);
+}
+.unit-level-badge i { display: block; height: 100%; background: var(--tier); }
+
+@media (min-width: 1051px) and (min-aspect-ratio: 4 / 3) {
+  .shop-scene {
+    height: 100dvh;
+    min-height: 720px;
+    overflow: hidden;
+  }
+  .shop-scene .hud {
+    position: absolute;
+    left: 3.2%;
+    right: 1.7%;
+    top: 4.35%;
+    min-height: 0;
+    height: 8.9%;
+    padding: 0;
+    align-items: stretch;
+  }
+  .shop-scene .hud-left,
+  .shop-scene .hud-right { height: 100%; gap: clamp(10px, 1vw, 20px); }
+  .shop-scene .hud-card {
+    height: 100%;
+    min-height: 0;
+    padding: 0 clamp(14px, 1.3vw, 27px);
+    border-radius: clamp(15px, 1.25vw, 25px);
+  }
+  .shop-scene .hud-gold { min-width: 11.5vw; }
+  .shop-scene .hud-lives { min-width: 13vw; }
+  .shop-scene .hud-round { min-width: 11.5vw; }
+  .shop-scene .hud-card b { font-size: clamp(28px, 3.4vh, 42px); }
+  .shop-scene .hud-coin { width: clamp(38px, 5.2vh, 60px); height: clamp(38px, 5.2vh, 60px); }
+  .shop-scene .hud-lives .life { width: clamp(33px, 4.4vh, 51px); height: clamp(33px, 4.4vh, 51px); }
+  .shop-scene .hud-band,
+  .shop-scene .hud-tier { display: none; }
+  .shop-scene .icon-btn {
+    width: clamp(58px, 8.9vh, 102px);
+    height: 100%;
+    border-radius: clamp(14px, 1.1vw, 22px);
+  }
+  .shop-scene .icon-btn svg { width: 48%; height: 48%; }
+
+  .shop-workspace {
+    position: absolute;
+    inset: 0;
+    display: block;
+    min-height: 0;
+    padding: 0;
+  }
+  .ring-panel {
+    position: absolute;
+    left: 3%;
+    top: 12.5%;
+    width: 64.5%;
+    height: 55.5%;
+    padding: 0;
+  }
+  .ring-head,
+  .ring-order,
+  .front-hint { display: none; }
+  .ring-stage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .ring-stage .unit { --unit-w: clamp(142px, 9vw, 184px); }
+
+  .ring-stage .chip-atk,
+  .ring-stage .chip-hp,
+  .shop-units .chip-atk,
+  .shop-units .chip-hp,
+  .shop-detail-panel .chip-atk,
+  .shop-detail-panel .chip-hp {
+    width: 56px;
+    min-width: 56px;
+    height: 54px;
+  }
+  .ring-stage .chip-atk .ico,
+  .shop-units .chip-atk .ico,
+  .shop-detail-panel .chip-atk .ico {
+    left: -13px;
+    top: -12px;
+    width: 32px;
+    height: 32px;
+  }
+  .ring-stage .chip-hp .ico,
+  .shop-units .chip-hp .ico,
+  .shop-detail-panel .chip-hp .ico {
+    inset: -6px -7px -7px;
+    width: 68px;
+    height: 68px;
+  }
+  .ring-stage .chip-atk .v,
+  .ring-stage .chip-hp .v,
+  .shop-units .chip-atk .v,
+  .shop-units .chip-hp .v,
+  .shop-detail-panel .chip-atk .v,
+  .shop-detail-panel .chip-hp .v { font-size: 22px; }
+
+  .shop-detail-panel {
+    position: absolute;
+    left: 70.4%;
+    top: 25.1%;
+    width: 28%;
+    height: 47%;
+    max-height: none;
+    padding: clamp(12px, 1vw, 20px);
+    overflow: auto;
+  }
+  .shop-detail-panel .detail-head { gap: 0; }
+  .shop-detail-panel .detail-art {
+    width: min(180px, 50%);
+    margin: -8px auto -14px;
+  }
+  .shop-detail-panel .abil { margin-top: 6px; gap: 4px; }
+  .shop-detail-panel .abil li {
+    min-height: 56px;
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+  .shop-detail-panel .detail-actions { display: none; }
+
+  .shop-dock {
+    position: absolute;
+    left: 3%;
+    right: 1.7%;
+    bottom: 3%;
+    height: 24.5%;
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 58%) minmax(0, 39%);
+    column-gap: 3%;
+    align-items: stretch;
+  }
+  .shop-panel {
+    position: relative;
+    grid-column: 1;
+    height: 100%;
+    align-items: stretch;
+  }
+  .shop-toolbar {
+    position: absolute;
+    right: 0;
+    top: -52px;
+    z-index: 8;
+    min-height: 0;
+    width: auto;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .shop-title { display: none; }
+  .shop-market-body {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    background: transparent;
+  }
+  .shop-units {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 68%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    gap: 1.5vw;
+    align-items: end;
+    justify-content: space-around;
+    overflow: hidden;
+  }
+  .pedestal {
+    width: clamp(135px, 10vw, 198px);
+    min-width: clamp(135px, 10vw, 198px);
+  }
+  .shop-side {
+    position: absolute;
+    left: 72%;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 66px;
+    gap: 8px;
+  }
+  .shop-items {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .item-card { min-height: 0; }
+  .sell-zone { min-height: 0; }
+
+  .shop-actions {
+    grid-column: 2;
+    align-self: end;
+    width: 100%;
+    height: clamp(82px, 11.5vh, 132px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2%;
+  }
+  .shop-actions .btn {
+    height: 100%;
+    min-height: 0;
+    padding: 0 12px;
+    border-radius: clamp(15px, 1.15vw, 23px);
+  }
+  .shop-actions .btn span { font-size: clamp(28px, 3.4vh, 42px); }
+}
+
+@media (max-width: 1050px) {
+  .unit-level-badge { display: none; }
+}
