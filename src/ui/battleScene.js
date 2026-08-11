@@ -3,7 +3,7 @@
 
 import { TIER_COLORS, TRIGGERS } from '../data/species.js';
 import { unitStand, ICONS } from './unitView.js';
-import { backgroundSvg, ringPathColor } from '../art/backgrounds.js';
+import { backgroundSvg } from '../art/backgrounds.js';
 import { prefersReducedMotion, sleep } from './dom.js';
 import { MAX_TURNS } from '../engine/battle.js';
 
@@ -41,8 +41,6 @@ export function playBattle(root, {
 
     <div class="stage" id="stage">
       ${backgroundSvg(backgroundId)}
-      <div class="ring-path" id="pathAlly"></div>
-      <div class="ring-path" id="pathEnemy"></div>
       <div class="front-marker" id="frontMarker">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4 L16 16 M2 18 l4 4 M3 21 l3 -3 M20 4 L8 16 M22 18 l-4 4 M21 21 l-3 -3" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>
         <span>전선</span>
@@ -58,7 +56,6 @@ export function playBattle(root, {
 
   const stage = root.querySelector('#stage');
   const rings = [root.querySelector('#ringAlly'), root.querySelector('#ringEnemy')];
-  const paths = [root.querySelector('#pathAlly'), root.querySelector('#pathEnemy')];
   const fxLayer = root.querySelector('#fxLayer');
   const logBox = root.querySelector('#battleLog');
   const turnNum = root.querySelector('#turnNum');
@@ -97,16 +94,6 @@ export function playBattle(root, {
       geo.squash = 0.9;
       geo.maxUw = 150;
     }
-    for (const [i, p] of paths.entries()) {
-      const c = geo.centers[i];
-      const w = geo.radius * 2 + 26;
-      const h = geo.radius * 2 * geo.squash + 26;
-      p.style.width = `${w}px`;
-      p.style.height = `${h}px`;
-      p.style.left = `${c.x - w / 2}px`;
-      p.style.top = `${c.y - h / 2}px`;
-      p.style.setProperty('--path', ringPathColor(backgroundId));
-    }
     const marker = root.querySelector('#frontMarker');
     if (marker) {
       marker.style.left = `${(geo.centers[0].x + geo.centers[1].x) / 2}px`;
@@ -141,6 +128,7 @@ export function playBattle(root, {
           wrap.innerHTML = unitStand(u, { flip: side === 1, hitArea: false });
           node = wrap.firstElementChild;
           node.classList.add('ring-unit', 'spawn');
+          node.style.setProperty('--idle-delay', `${-((idx + side * 2) * .31).toFixed(2)}s`);
           rings[side].appendChild(node);
           nodes.set(u.uid, node);
         }
@@ -309,16 +297,10 @@ export function playBattle(root, {
   function badgeGlow(uid, trigger, text) {
     const node = nodes.get(uid);
     if (!node) return;
-    let b = node.querySelector('.badge');
-    if (!b) {
-      b = document.createElement('div');
-      b.className = 'badge';
-      node.querySelector('.unit-foot').appendChild(b);
-    }
-    b.textContent = TRIGGERS[trigger] || trigger;
-    b.classList.add('lit');
-    setTimeout(() => b.classList.remove('lit'), 620);
-    if (text) floatText(uid, text.length > 22 ? `${text.slice(0, 21)}…` : text, 'trigger');
+    node.classList.add('ability-active');
+    setTimeout(() => node.classList.remove('ability-active'), 620);
+    const label = text || TRIGGERS[trigger] || trigger;
+    floatText(uid, label.length > 22 ? `${label.slice(0, 21)}…` : label, 'trigger');
   }
 
   const logLines = [];

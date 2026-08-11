@@ -12,9 +12,12 @@ function environmentDecor(bgId, p, horizon) {
     <ellipse cx="105" cy="535" rx="42" ry="15"/><ellipse cx="1090" cy="522" rx="54" ry="17"/>
     <ellipse cx="945" cy="570" rx="26" ry="9"/>
   </g>`;
-  if (bgId === 'bg_grass') return `<g stroke="#25314A" stroke-width="5" stroke-linejoin="round">
-    <path d="M70 ${horizon + 98} q34 -92 68 0Z M1060 ${horizon + 90} q38 -104 76 0Z" fill="#527B45"/>
-    <circle cx="104" cy="${horizon + 82}" r="42" fill="#78A85A"/><circle cx="1098" cy="${horizon + 72}" r="48" fill="#78A85A"/>
+  if (bgId === 'bg_grass') return `<g fill="#527B45">
+    <path d="M36 ${horizon + 112} q28 -46 58 -14 q26 -58 64 -10 q34 -30 66 24Z"/>
+    <path d="M996 ${horizon + 108} q32 -54 65 -16 q28 -66 70 -8 q28 -28 60 22Z"/>
+  </g><g fill="#78A85A">
+    <circle cx="82" cy="${horizon + 92}" r="34"/><circle cx="130" cy="${horizon + 91}" r="43"/><circle cx="178" cy="${horizon + 100}" r="30"/>
+    <circle cx="1044" cy="${horizon + 92}" r="34"/><circle cx="1092" cy="${horizon + 80}" r="44"/><circle cx="1140" cy="${horizon + 98}" r="32"/>
   </g><g fill="#F8D55B" opacity=".9">${[178, 214, 978, 1012].map((x, i) => `<circle cx="${x}" cy="${530 + (i % 2) * 18}" r="6"/>`).join('')}</g>${commonRocks}`;
   if (bgId === 'bg_sunset') return `<circle cx="930" cy="128" r="76" fill="#FFD36B" opacity=".9"/>
     <g fill="#6F6742" opacity=".7"><path d="M0 520 q56 -80 112 0Z M1050 520 q72 -98 150 0Z"/></g>
@@ -67,7 +70,7 @@ export function backgroundSvg(bgId) {
     <path d="M-40 ${horizon + 14} q210 -78 430 -16 q210 -64 420 4 q130 -36 430 12 l0 58 l-1280 0Z" fill="${p.distant2}"/>
     <rect x="0" y="${horizon}" width="${VB_W}" height="${VB_H - horizon}" fill="url(#ground-${bgId})"/>
     <path d="M0 ${horizon + 56} q300 -32 600 -5 q300 29 600 -9 l0 ${VB_H} l-1200 0Z" fill="${p.ground2}" opacity=".74"/>
-    <ellipse cx="600" cy="505" rx="430" ry="108" fill="${p.ringPath}" opacity=".20"/>
+    <path d="M90 520 q210 -52 390 -8 q170 38 330 -3 q170 -42 330 13 l0 78 l-1050 0Z" fill="${p.ringPath}" opacity=".10"/>
     ${decor}
     <rect width="${VB_W}" height="${VB_H}" fill="url(#grain-${bgId})"/>
     <rect width="${VB_W}" height="${VB_H}" fill="url(#vignette-${bgId})"/>

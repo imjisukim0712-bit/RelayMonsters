@@ -1038,3 +1038,316 @@ html, body {
   .shop-actions .btn span { font-size: 20px; }
   .shop-actions .btn small { display: none; }
 }
+
+/* ── Open field refinement ──────────────────────────────────────
+   The shop and formation now share the equipped battlefield. Monsters stand
+   directly in the landscape; visible orbit rings and shop-card frames are
+   intentionally removed. */
+.shop-scene {
+  min-height: 100dvh;
+  overflow: auto;
+  background: #9fca75;
+}
+.shop-scene::after { display: none; }
+.shop-field-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.shop-field-bg .bg-svg {
+  width: 100%;
+  height: 100%;
+  filter: saturate(.92) brightness(1.04);
+}
+.shop-field-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), transparent 38%),
+    linear-gradient(0deg, rgba(35,65,42,.13), transparent 42%);
+}
+
+/* No drawn orbit/ring anywhere. Spatial order remains functional. */
+.ring-path,
+.ring-track,
+.ring-map-decor,
+.unit-ring { display: none !important; }
+.unit.shielded .unit-body { filter: drop-shadow(0 0 9px rgba(78,168,223,.9)); }
+.unit.mana-lit .unit-body { filter: drop-shadow(0 0 9px rgba(145,99,216,.92)); }
+.unit.lapped .unit-body,
+.unit.ability-active .unit-body { filter: drop-shadow(0 0 10px rgba(246,195,67,.95)); }
+
+.shop-workspace {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(560px, 1fr) minmax(300px, 27vw);
+  gap: clamp(16px, 2vw, 30px);
+  padding: 0 clamp(16px, 2.4vw, 38px) 4px;
+}
+.ring-panel {
+  min-width: 0;
+  padding: 0;
+  gap: 4px;
+  background: transparent;
+}
+.ring-head {
+  width: max-content;
+  max-width: 100%;
+  padding: 7px 13px;
+  border-radius: 14px;
+  background: rgba(255,248,232,.70);
+  box-shadow: 0 3px 12px rgba(37,49,74,.10);
+  backdrop-filter: blur(5px);
+}
+.ring-head h2 { font-size: 23px; }
+.ring-head h2 small { display: inline; margin-left: 8px; }
+.ring-head-actions { margin-left: 12px; }
+.ring-info { color: #4b5e4c; }
+.ring-info .tag { background: rgba(255,255,255,.48); }
+.ring-stage {
+  flex: 1;
+  min-height: 338px;
+  height: auto;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 49% 58%, rgba(255,248,215,.17) 0 28%, transparent 68%);
+  box-shadow: none;
+}
+.ring-stage::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 5%;
+  height: 25%;
+  background: linear-gradient(180deg, transparent, rgba(55,100,52,.10));
+  clip-path: polygon(0 88%, 7% 73%, 14% 90%, 22% 70%, 30% 90%, 39% 74%, 48% 92%, 58% 69%, 68% 89%, 78% 72%, 88% 90%, 100% 75%, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+.ring-stage .unit { cursor: grab; }
+.ring-stage .unit-shadow { opacity: .48; }
+.front-hint {
+  right: 10px;
+  bottom: 7px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,248,232,.76);
+  box-shadow: 0 2px 8px rgba(37,49,74,.10);
+}
+.front-hint span { background: #f6c343; }
+.ring-empty {
+  inset: auto 50% 45%;
+  transform: translateX(50%);
+  width: max-content;
+  max-width: 90%;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255,248,232,.74);
+  color: #4b5e4c;
+}
+.ring-order {
+  width: min(100%, 820px);
+  padding: 5px 6px 8px;
+  border-radius: 15px;
+  background: rgba(255,248,232,.40);
+  backdrop-filter: blur(3px);
+}
+.order-chip { background: rgba(255,250,237,.82); }
+
+.shop-detail-panel {
+  align-self: stretch;
+  min-height: 0;
+  padding: 14px;
+  border: 3px solid rgba(78,52,39,.82);
+  border-radius: 19px;
+  background: rgba(255,248,232,.82);
+  box-shadow: 0 8px 22px rgba(37,49,74,.13);
+  backdrop-filter: blur(8px);
+}
+.shop-detail-panel .detail-art { background: transparent; }
+.shop-detail-panel .abil li { background: rgba(255,255,255,.44); }
+
+.shop-dock {
+  position: relative;
+  z-index: 4;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 27vw);
+  gap: 14px;
+  padding: 2px clamp(16px, 2.4vw, 38px) 18px;
+}
+.shop-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.shop-toolbar {
+  min-height: 51px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 7px 6px 14px;
+  border-radius: 15px;
+  background: rgba(57,89,49,.84);
+  color: #fff8e8;
+  box-shadow: 0 3px 0 rgba(37,49,74,.24), 0 8px 18px rgba(37,49,74,.10);
+  backdrop-filter: blur(6px);
+}
+.shop-title { min-width: 0; display: flex; align-items: baseline; gap: 9px; }
+.shop-title .eyebrow { color: #e6d388; }
+.shop-title b { font-size: 18px; white-space: nowrap; }
+.shop-title small { font-size: 12px; color: rgba(255,248,232,.75); }
+.shop-toolbar .reroll-btn {
+  flex: none;
+  background: #fff8e8;
+  box-shadow: 0 3px 0 rgba(22,38,27,.4);
+}
+.shop-market-body {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, .28fr);
+  align-items: end;
+  gap: 10px;
+  padding: 2px 8px 5px;
+  background: linear-gradient(180deg, transparent, rgba(55,100,52,.15));
+  border-radius: 0 0 20px 20px;
+}
+.shop-units {
+  min-width: 0;
+  min-height: 176px;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: clamp(8px, 1.2vw, 18px);
+  padding: 7px 5px 2px;
+}
+
+/* Shop monsters are freestanding figures on solid ground pads, never cards. */
+.pedestal {
+  width: clamp(122px, 9.5vw, 154px);
+  min-width: clamp(122px, 9.5vw, 154px);
+  padding: 0 4px 3px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.pedestal::before { display: none; }
+.pedestal.selected {
+  outline: 0;
+  transform: translateY(-2px);
+}
+.ped-unit {
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+.ped-disc {
+  display: block;
+  top: calc(var(--unit-w-shop) * .77);
+  width: 78%;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #9c8d69 0 48%, #665d49 49% 100%);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.25), 0 4px 7px rgba(37,49,74,.20);
+}
+.pedestal.selected .ped-disc {
+  background: linear-gradient(180deg, #f3ce5d 0 48%, #a97627 49% 100%);
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.32), 0 0 0 4px rgba(255,220,91,.25), 0 4px 8px rgba(37,49,74,.22);
+}
+.ped-meta {
+  width: 100%;
+  margin-top: -5px;
+  gap: 3px;
+  color: var(--ink);
+  text-shadow: none;
+  z-index: 3;
+}
+.ped-meta .chips { order: 1; }
+.ped-name {
+  order: 2;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255,248,232,.78);
+  box-shadow: 0 2px 6px rgba(37,49,74,.10);
+  font-size: 13px;
+}
+.ped-price {
+  order: 3;
+  right: 4px;
+  top: 3px;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--out);
+  background: var(--gold);
+  color: var(--out);
+  text-shadow: none;
+}
+.shop-side { min-width: 0; gap: 7px; }
+.sell-zone {
+  min-height: 58px;
+  border-color: rgba(37,49,74,.35);
+  background: rgba(255,248,232,.46);
+  color: #435645;
+}
+.item-card { background: rgba(255,248,232,.86); }
+
+/* Lightweight breathing and weight-shift idle motion for all monster art. */
+.shop-scene .ring-unit:not(.dragging) .unit-body .sprite,
+.shop-scene .pedestal:not(.dragging) .ped-unit .sprite,
+.battle-scene .unit:not(.hit):not(.dying):not(.spawn) .unit-body .sprite {
+  transform-origin: 50% 84%;
+  animation: monsterIdle 2.85s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+.shop-scene .pedestal:not(.dragging) .ped-disc {
+  animation: monsterGroundIdle 2.85s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0s);
+}
+@keyframes monsterIdle {
+  0%, 100% { transform: translateY(0) rotate(-.25deg) scaleY(1); }
+  43% { transform: translateY(-5px) rotate(.25deg) scaleY(1.018); }
+  56% { transform: translateY(-5px) rotate(.4deg) scaleY(1.018); }
+}
+@keyframes monsterGroundIdle {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 1; }
+  48% { transform: translateX(-50%) scaleX(.93); opacity: .82; }
+}
+
+@media (max-width: 1050px) {
+  .shop-workspace { grid-template-columns: 1fr; min-height: auto; }
+  .shop-detail-panel { display: none; }
+  .shop-dock { grid-template-columns: 1fr; }
+  .shop-actions { min-height: 88px; }
+}
+
+@media (max-width: 760px) {
+  .shop-workspace { padding: 0 8px; }
+  .ring-head { width: 100%; padding: 6px 10px; }
+  .ring-head h2 { font-size: 19px; }
+  .ring-head h2 small { display: block; margin-left: 0; }
+  .ring-head-actions { display: none; }
+  .ring-stage { min-height: 270px; }
+  .ring-order { background: rgba(255,248,232,.58); }
+  .shop-dock { padding: 0 8px 12px; }
+  .shop-title small, .shop-title .eyebrow { display: none; }
+  .shop-market-body { grid-template-columns: 1fr; padding-inline: 2px; }
+  .shop-units { min-height: 166px; }
+  .shop-side { display: grid; grid-template-columns: minmax(0, 1fr) 86px; }
+  .pedestal { width: 116px; min-width: 116px; }
+}

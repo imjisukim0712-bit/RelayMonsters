@@ -6,6 +6,7 @@ import { itemById } from '../data/items.js';
 import { speciesById } from '../data/species.js';
 import { unitStand, viewFromRunUnit, detailPanel, sprite, statChips } from './unitView.js';
 import { itemSprite } from '../art/items.js';
+import { backgroundSvg } from '../art/backgrounds.js';
 import { toast, toastLines, modal, confirmDialog, qs, qsa } from './dom.js';
 import { lifeIcons } from './battleScene.js';
 import {
@@ -16,7 +17,7 @@ import { sellValue, unitLevel, unitAtk, unitHp } from '../engine/unit.js';
 import { roundBandLabel } from '../engine/run.js';
 import { saveRun } from '../storage/save.js';
 
-export function renderShop(root, { run, onStartBattle, onQuit }) {
+export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle, onQuit }) {
   let selectedItem = null; // 대상 지정 대기 중인 소모품
   let selectedOfferId = run.shop.units[0]?.oid || null;
   let selectedUnitId = null;
@@ -55,6 +56,7 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
     const tier = run.shopTier;
     return `
   <div class="scene shop-scene">
+    <div class="shop-field-bg">${backgroundSvg(backgroundId)}</div>
     <header class="hud">
       <div class="hud-left">
         <span class="hud-card hud-gold"><i class="hud-coin">◆</i><b>${run.gold}</b></span>
@@ -77,12 +79,9 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
           </div>
           <div class="ring-head-actions">
             <div class="ring-info">${ringInfo(run)}</div>
-            <button class="btn tiny reroll-btn" id="rerollBtn">↻ 리롤 <b>${REROLL_PRICE}G</b></button>
           </div>
         </div>
         <div class="ring-stage" id="ringStage">
-          <div class="ring-map-decor" aria-hidden="true"></div>
-          <div class="ring-track"></div>
           <div class="front-hint"><span>1</span><small>첫 등판</small></div>
           ${run.ring.length === 0 ? '<div class="ring-empty">상점의 몬스터를 이곳으로 끌어오세요</div>' : ''}
         </div>
@@ -94,17 +93,27 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
 
     <section class="shop-dock">
       <div class="shop-panel">
-        <div class="shop-units" id="shopUnits">
-          ${run.shop.units.map((o) => shopUnitCard(o)).join('')
-        || '<div class="sold-out">모두 판매되었습니다 — 리롤하거나 웨이브를 진행하세요</div>'}
-        </div>
-        <div class="shop-side">
-          <div class="shop-items" id="shopItems">
-            ${run.shop.items.map((o) => shopItemCard(o)).join('') || '<div class="sold-out small">소모품 매진</div>'}
+        <div class="shop-toolbar">
+          <div class="shop-title">
+            <span class="eyebrow">FIELD MARKET</span>
+            <b>몬스터 상점</b>
+            <small>몬스터를 선택하거나 링으로 끌어오세요</small>
           </div>
-          <div class="sell-zone" data-drop="sell" id="sellZone">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <span>판매</span><small>몬스터를 끌어놓기</small>
+          <button class="btn tiny reroll-btn" id="rerollBtn">↻ 리롤 <b>${REROLL_PRICE}G</b></button>
+        </div>
+        <div class="shop-market-body">
+          <div class="shop-units" id="shopUnits">
+            ${run.shop.units.map((o, i) => shopUnitCard(o, i)).join('')
+          || '<div class="sold-out">모두 판매되었습니다 — 리롤하거나 웨이브를 진행하세요</div>'}
+          </div>
+          <div class="shop-side">
+            <div class="shop-items" id="shopItems">
+              ${run.shop.items.map((o) => shopItemCard(o)).join('') || '<div class="sold-out small">소모품 매진</div>'}
+            </div>
+            <div class="sell-zone" data-drop="sell" id="sellZone">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              <span>판매</span><small>몬스터를 끌어놓기</small>
+            </div>
           </div>
         </div>
       </div>
@@ -141,16 +150,16 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
     }).join('');
   }
 
-  function shopUnitCard(offer) {
+  function shopUnitCard(offer, index = 0) {
     const sp = speciesById(offer.speciesId);
     const atk = sp.atk + offer.exp;
     const hp = sp.hp + offer.exp;
-    return `<div class="pedestal draggable${offer.oid === selectedOfferId ? ' selected' : ''}" data-drag="shop" data-oid="${offer.oid}" data-species="${sp.id}" style="--tier:${TIER_COLORS[sp.tier]}">
+    return `<div class="pedestal draggable${offer.oid === selectedOfferId ? ' selected' : ''}" data-drag="shop" data-oid="${offer.oid}" data-species="${sp.id}" style="--tier:${TIER_COLORS[sp.tier]};--idle-delay:${(-index * .37).toFixed(2)}s">
       <div class="ped-disc"></div>
       <div class="ped-unit">${sprite(sp.art)}</div>
       <div class="ped-meta">
-        <div class="ped-name">${sp.name} <span class="tier-tag">T${sp.tier}</span></div>
         ${statChips({ atk, hp })}
+        <div class="ped-name">${sp.name}</div>
         <div class="ped-price"><b>${offer.price}</b>G</div>
       </div>
     </div>`;
@@ -204,12 +213,13 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
       const wrap = document.createElement('div');
       wrap.innerHTML = unitStand(view, {
         showName: !compact, slotLabel: i + 1, id: u.id, front: i === 0,
-        selected: u.id === selectedUnitId, className: 'draggable', flip: false,
+        selected: u.id === selectedUnitId, className: 'draggable', flip: false, showLevel: false,
       });
       const node = wrap.firstElementChild;
       node.classList.add('ring-unit');
       node.classList.toggle('tiny-unit', compact);
       node.style.setProperty('--unit-w', `${Math.round(uw)}px`);
+      node.style.setProperty('--idle-delay', `${(-i * .41).toFixed(2)}s`);
       node.dataset.drag = 'ring';
       node.dataset.drop = 'unit';
       node.dataset.index = i;

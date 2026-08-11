@@ -1,8 +1,8 @@
 // 유닛 렌더링 (기획서 13.2 / 13.3)
 // 카드·초상화 크롭 없이 투명 배경 전신 SVG 를 그대로 세우고,
-// 공격력·체력은 발밑 숫자 칩으로, 능력 기믹은 트리거 배지로 분리해 표시한다.
+// 공격력·체력과 이름만 발밑에 두어 전신 실루엣과 전장을 가리지 않게 한다.
 
-import { TIER_COLORS, TRIGGERS } from '../data/species.js';
+import { TIER_COLORS } from '../data/species.js';
 import {
   unitSpecies, unitAtk, unitHp, unitLevel, unitAbilities, levelProgress, expToNextLevel,
   abilityLevelKey,
@@ -45,7 +45,7 @@ export function levelPips(level) {
 // 링·상점 공용 유닛 스탠드
 export function unitStand(view, opts = {}) {
   const {
-    tier, art, name, atk, hp, maxHp, shield = 0, level = 1, trigger = null,
+    tier, art, name, atk, hp, maxHp, shield = 0, level = 1,
     manaUnit = false, mana = 0, maxMana = 10,
   } = view;
   const color = TIER_COLORS[tier] || '#8CC63F';
@@ -56,13 +56,11 @@ export function unitStand(view, opts = {}) {
 
   return `<div class="${cls}" data-uid="${view.uid || ''}" data-id="${opts.id || ''}" style="--tier:${color}">
     <div class="unit-shadow"></div>
-    <div class="unit-ring"></div>
     <div class="unit-body">${sprite(art)}</div>
     ${opts.hitArea === false ? '' : '<div class="unit-hit" aria-hidden="true"></div>'}
     <div class="unit-foot">
       ${statChips({ atk, hp, maxHp, shield, manaUnit, mana, maxMana })}
-      ${trigger ? `<div class="badge" data-trigger="${trigger}">${TRIGGERS[trigger] || ''}</div>` : ''}
-      ${opts.showName ? `<div class="unit-name">${name} <span class="lv-tag">Lv${level}</span></div>` : ''}
+      ${opts.showName ? `<div class="unit-name">${name}${opts.showLevel === false ? '' : ` <span class="lv-tag">Lv${level}</span>`}</div>` : ''}
     </div>
     ${opts.slotLabel ? `<div class="slot-tag${opts.slotLabel === 1 ? ' first' : ''}">${opts.slotLabel}</div>` : ''}
   </div>`;
