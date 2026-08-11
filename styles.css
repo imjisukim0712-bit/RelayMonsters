@@ -1432,3 +1432,48 @@ html, body {
 .unit.tiny-unit .chip-hp .ico { width: 44px; height: 44px; inset: -4px; }
 .unit.tiny-unit .chip-atk .v,
 .unit.tiny-unit .chip-hp .v { font-size: 15px; }
+
+/* ── Wide action bar ────────────────────────────────────────────
+   Primary shop actions use the full dock width instead of stretching to the
+   height of the market inventory column. */
+.shop-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.shop-actions {
+  width: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.25fr);
+  gap: 12px;
+}
+.shop-actions .btn {
+  width: 100%;
+  height: 70px;
+  min-height: 70px;
+  padding: 8px 20px;
+  flex-direction: row;
+  gap: 10px;
+  border-radius: 17px;
+}
+.shop-actions .btn span { font-size: clamp(22px, 1.8vw, 29px); }
+.shop-actions .btn small { font-size: 12px; }
+.action-wave::before { font-size: 16px; }
+
+@media (max-width: 1050px) {
+  .shop-actions { min-height: 0; }
+}
+
+@media (max-width: 760px) {
+  .shop-dock { gap: 8px; }
+  .shop-actions { gap: 8px; }
+  .shop-actions .btn {
+    height: 62px;
+    min-height: 62px;
+    padding: 7px 10px;
+    gap: 5px;
+    border-radius: 15px;
+  }
+  .shop-actions .btn span { font-size: 19px; }
+}
