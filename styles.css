@@ -1477,3 +1477,64 @@ html, body {
   }
   .shop-actions .btn span { font-size: 19px; }
 }
+
+/* ── Reference layout proportions ───────────────────────────────
+   Desktop composition follows the supplied sketch: field and formation on
+   the left, centered detail board on the right, market at lower left, and
+   two short horizontal actions at lower right. */
+.codex-button {
+  background: linear-gradient(#B67AE7, #8B54C8);
+  color: #201631;
+}
+.icon-btn svg { width: 29px; height: 29px; display: block; margin: auto; }
+.shop-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.shop-actions .btn small,
+.action-wave::before { display: none; }
+
+@media (min-width: 1051px) {
+  .shop-workspace {
+    grid-template-columns: minmax(620px, 1fr) minmax(360px, 29vw);
+    gap: clamp(20px, 2vw, 34px);
+  }
+  .shop-detail-panel {
+    align-self: center;
+    width: 100%;
+    max-height: min(560px, calc(100dvh - 250px));
+  }
+  .shop-dock {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(470px, 36vw);
+    align-items: end;
+    gap: clamp(16px, 2vw, 30px);
+  }
+  .shop-panel {
+    grid-column: 1;
+    align-self: end;
+  }
+  .shop-actions {
+    grid-column: 2;
+    align-self: end;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .shop-actions .btn {
+    height: 84px;
+    min-height: 84px;
+    padding-inline: 18px;
+  }
+  .shop-actions .btn span { font-size: clamp(22px, 1.8vw, 30px); }
+}
+
+@media (max-width: 1050px) {
+  .shop-dock {
+    display: flex;
+    flex-direction: column;
+  }
+  .shop-actions { width: 100%; }
+}
+
+@media (max-width: 760px) {
+  .shop-scene .hud-left { padding-right: 98px; }
+  .shop-scene .hud-right { gap: 5px; }
+  .codex-button, .shop-scene .icon-btn.utility { width: 44px; height: 44px; }
+}

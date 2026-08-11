@@ -17,7 +17,7 @@ import { sellValue, unitLevel, unitAtk, unitHp } from '../engine/unit.js';
 import { roundBandLabel } from '../engine/run.js';
 import { saveRun } from '../storage/save.js';
 
-export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle, onQuit }) {
+export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle, onCodex, onQuit }) {
   let selectedItem = null; // 대상 지정 대기 중인 소모품
   let selectedOfferId = run.shop.units[0]?.oid || null;
   let selectedUnitId = null;
@@ -66,6 +66,9 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       <div class="hud-right">
         <span class="hud-band">${roundBandLabel(run.round)}</span>
         <span class="hud-tier" title="상점 티어">T${tier} 상점 · ${unitSlotsForTier(tier)}칸</span>
+        <button class="icon-btn codex-button" id="codexBtn" title="몬스터 도감" aria-label="몬스터 도감">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5Q7.5 3.5 12 6v14q-4.5-2.5-9-.5Zm18 0Q16.5 3.5 12 6v14q4.5-2.5 9-.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 6v14" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
+        </button>
         <button class="icon-btn utility" id="quitBtn" title="메인 메뉴" aria-label="메인 메뉴">☰</button>
       </div>
     </header>
@@ -509,6 +512,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       onStartBattle();
     });
     qs('#quitBtn', root)?.addEventListener('click', () => onQuit && onQuit());
+    qs('#codexBtn', root)?.addEventListener('click', () => onCodex && onCodex());
     qsa('.item-card', root).forEach((n) => n.addEventListener('click', () => onItemClick(n.dataset.oid)));
     qs('#ringOrder', root)?.addEventListener('click', (e) => {
       const b = e.target.closest('.mv');
