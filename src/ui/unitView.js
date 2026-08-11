@@ -44,7 +44,7 @@ export function levelPips(level) {
 // 링·상점 공용 유닛 스탠드
 export function unitStand(view, opts = {}) {
   const {
-    tier, art, name, atk, hp, maxHp, shield = 0, level = 1,
+    tier, art, name, atk, hp, maxHp, shield = 0, level = 1, levelRatio = 0,
     manaUnit = false, mana = 0, maxMana = 10,
   } = view;
   const color = TIER_COLORS[tier] || '#8CC63F';
@@ -55,6 +55,7 @@ export function unitStand(view, opts = {}) {
 
   return `<div class="${cls}" data-uid="${view.uid || ''}" data-id="${opts.id || ''}" style="--tier:${color}">
     <div class="unit-shadow"></div>
+    ${opts.showLevelBadge ? `<div class="unit-level-badge"><b>Lv.${level}</b><span><i style="width:${Math.round(levelRatio * 100)}%"></i></span></div>` : ''}
     <div class="unit-body">${sprite(art)}</div>
     ${opts.hitArea === false ? '' : '<div class="unit-hit" aria-hidden="true"></div>'}
     <div class="unit-foot">
@@ -80,6 +81,7 @@ export function viewFromRunUnit(u) {
     maxHp: unitHp(u),
     shield: 0,
     level: unitLevel(u),
+    levelRatio: levelProgress(u.exp).ratio,
     trigger: abil?.trigger || null,
     manaUnit: !!sp.manaUnit,
     mana: 0,
