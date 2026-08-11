@@ -1,3 +1,101 @@
-# RelayMonsters
+# Relay Monsters
 
-Temporary README.md created to verify write/pull/push permissions on this repository.
+원형 링 위에서 몬스터들이 매 턴 배턴을 넘기며 싸우는 **회전 오토배틀러**.
+빌드 도구 없이 동작하는 정적 웹 앱(ES 모듈)이며 GitHub Pages 로 배포된다.
+
+플레이: **https://imjisukim0712-bit.github.io/RelayMonsters/**
+
+## 구현 범위
+
+기획서 v0.5 기준으로 **Firebase 연결을 제외한 전부**가 구현되어 있다.
+
+| 영역 | 상태 |
+|---|---|
+| 링 시스템 (빈칸 없는 가변 링 · 전선 · 압축 · 회전) | ✅ |
+| 전투 8단계 턴 시퀀스 · 12종 트리거 · 트리거 우선순위 · 재귀 깊이 제한 | ✅ |
+| 몬스터 60종 (Lv1/Lv3/Lv5 능력 180문구, 전원 고유) | ✅ |
+| 60종 전신 벡터 SVG 아트 + 실루엣 식별자 | ✅ |
+| 상점 · 골드 · 리롤 · 판매 · 합치기 · 5레벨 경험치 | ✅ |
+| 소모품 9종 · 아이템 부여 능력 3종 | ✅ |
+| 18라운드 · 생명 3 · 라운드 곡선 · 프리셋 봇 54개 | ✅ |
+| 코인 · 배경 상점 6종 · 도감 · 규칙 화면 | ✅ |
+| 회전 시 원호 바운스 이동 · 배속 1×/2×/4× · 트리거 배지 | ✅ |
+| 스냅샷 저장 · 비동기 멀티 매칭 (로컬 저장소) | ✅ |
+| **Firebase 서버 연동** | ⏳ 어댑터 자리만 준비됨 |
+
+## Firebase 연결 (다음 작업)
+
+게임 코드는 스냅샷 업로드/다운로드를 `src/storage/backend.js` 의 어댑터 인터페이스로만 호출한다.
+연결에 필요한 변경은 다음 3단계뿐이다.
+
+1. `src/storage/firebaseBackend.js` 의 `FIREBASE_CONFIG` 를 실제 프로젝트 값으로 채운다.
+2. `src/main.js` 상단의 두 줄 주석을 해제한다.
+   ```js
+   import { enableFirebaseBackend } from './storage/firebaseBackend.js';
+   await enableFirebaseBackend().catch((e) => console.warn('Firebase 미연결 — 로컬 모드', e));
+   ```
+3. Firestore 에 `snapshots` 컬렉션을 만들고 `(round ASC, wins ASC)` 복합 인덱스를 추가한다.
+   읽기는 공개, 쓰기는 인증된 사용자로 제한한다.
+
+스냅샷 문서 형태는 기획서 14.3 과 동일하며 `makeSnapshot()` 이 그대로 생성한다.
+연결 전에는 자동으로 로컬 스냅샷 + 프리셋 봇 폴백으로 동작한다.
+
+## 구조
+
+```
+index.html · styles.css
+src/
+  main.js                 부트스트랩 (Firebase 연결 지점)
+  data/    species.js     로스터 60종 + 능력 데이터
+           items.js       소모품 9종 · 아이템 부여 능력
+           bots.js        프리셋 봇 54개 (결정론적 생성)
+           backgrounds.js 배경 6종
+  engine/  battle.js      전투 엔진 → 이벤트 타임라인 반환
+           ring.js        전선·앞/뒤 유닛·회전·압축 좌표 규칙
+           unit.js        경험치 기반 파생 스탯 · 레벨 · 합치기
+           shop.js        상점·구매·판매·아이템
+           shopEffects.js 판매 / 아이템 사용 트리거
+           run.js         라운드·생명·코인
+           text.js        능력 문구를 데이터에서 파생 생성
+           rng.js         시드 RNG
+  storage/ save.js        localStorage 세이브 (v3)
+           backend.js     멀티 백엔드 추상화
+           firebaseBackend.js  Firebase 어댑터 (미연결)
+  art/     symbols.js     60종 SVG symbol 시트
+           items.js       소모품 아이콘
+           backgrounds.js 배경 레이어
+  ui/      app.js         씬 라우터
+           battleScene.js 전투 재생 (원호 바운스 회전)
+           shopScene.js   상점 (드래그 구매·합치기·판매·순서 변경)
+           lobby.js  bgShop.js  codex.js  unitView.js  dom.js
+```
+
+전투 규칙과 연출은 완전히 분리되어 있다. `simulateBattle()` 은 DOM 없이 실행 가능한
+순수 함수이며 스냅샷이 포함된 이벤트 배열을 돌려주고, UI 는 그것을 재생만 한다.
+
+## 로컬 실행
+
+```bash
+npx http-server -p 8123 -c-1 .
+# http://localhost:8123
+```
+
+빌드 단계가 없으므로 파일을 그대로 열어도 되지만, ES 모듈 때문에 `file://` 대신
+정적 서버가 필요하다.
+
+## 설계 결정 메모
+
+기획서에서 명시되지 않아 구현 시 확정한 사항.
+
+- **전선 승계** — 전선 유닛이 교전으로 사망하면 뒤 유닛이 그 자리를 물려받고,
+  그 턴의 회전은 이 승계로 대체한다. 다음 등판 유닛이 전선을 건너뛰지 않게 하기 위함.
+  회전 트리거와 한 바퀴 카운터는 정상 진행한다.
+- **쓰러지는 중인 유닛 제외** — 사망 판정은 턴 시퀀스 5단계에서 확정되므로 체력 0 이하이면서
+  아직 제거되지 않은 유닛이 존재한다. 대상 선택에서는 이들을 제외해 처치 트리거의 피해가
+  방금 죽인 대상에게 낭비되지 않게 했다 (사이클롭스의 "다른 적" 표현과 일관).
+  단 `자신`은 예외로, 트롤처럼 피해받음으로 자신을 회복해 사망을 면하는 처리는 유지된다.
+- **슬라임 분열** — 링이 6칸이면 생성하지 않는다 (기획서 15.2 미결정 사항 중 첫 번째 안).
+- **피닉스 부활** — 링 압축 전 같은 슬롯에서 부활한다.
+- **코인 지급량** — 라운드 승리당 8코인, 클리어 시 +150. 배경 가격 0/250/350/350/500/800.
+- **세로 화면 전투** — 좌우 배치가 불가능한 세로 비율에서는 두 링을 위아래로 마주 세운다.
+- **유닛 표시 크기** — 인접 슬롯 간격에서 역산해 링 칸 수와 화면 크기에 관계없이 겹치지 않게 한다.
