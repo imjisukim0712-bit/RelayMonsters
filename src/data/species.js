@@ -57,6 +57,20 @@ const amt = (a, b, c) => [{ amount: a }, { amount: b }, { amount: c }];
 const atkUp = (a, b, c) => [{ atk: a }, { atk: b }, { atk: c }];
 const hpUp = (a, b, c) => [{ hp: a }, { hp: b }, { hp: c }];
 const pct = (a, b, c) => [{ pct: a }, { pct: b }, { pct: c }];
+const gainManaAmt = (a, b, c) => [{ op: 'gainMana', amount: a }, { op: 'gainMana', amount: b }, { op: 'gainMana', amount: c }];
+
+// 마나 유닛 능력: 한 트리거에서 마나를 얻고, 같은 이벤트 안에서 마나 조건을 즉시 확인한다 (5.4절).
+// levelsSpec 은 { 1: {gain, threshold, then}, 3: {...}, 5: {...} } 형태.
+function manaGate(trigger, levelsSpec) {
+  return {
+    trigger,
+    levels: {
+      1: { op: 'manaGate', ...levelsSpec[1] },
+      3: { op: 'manaGate', ...levelsSpec[3] },
+      5: { op: 'manaGate', ...levelsSpec[5] },
+    },
+  };
+}
 
 // ── 로스터 ────────────────────────────────────────────────────────
 export const SPECIES_LIST = [
@@ -125,9 +139,19 @@ export const SPECIES_LIST = [
     ability: A('ON_KILL', { op: 'buff', target: 'allAlly' }, atkUp(1, 2, 3)),
   },
   {
-    id: 'T2-03', name: '미라', tier: 2, atk: 3, hp: 9, art: 'mummy',
+    id: 'T2-03', name: '미라', tier: 2, atk: 3, hp: 9, art: 'mummy', manaUnit: true,
     silhouette: '붕대로 감긴 몸 + 가슴의 부적',
-    ability: A('ON_DAMAGED', { op: 'debuffAtk', target: 'attacker' }, amt(1, 2, 3)),
+    abilities: [
+      A('ON_DAMAGED', {}, gainManaAmt(1, 2, 2)),
+      {
+        trigger: 'ON_DEATH',
+        levels: {
+          1: { op: 'manaValueDamage', target: 'killedBy', mode: 'value' },
+          3: { op: 'manaValueDamage', target: 'killedBy', mode: 'plus', bonus: 2 },
+          5: { op: 'manaValueDamage', target: 'killedBy', mode: 'double' },
+        },
+      },
+    ],
   },
   {
     id: 'T2-04', name: '고슴도치', tier: 2, atk: 4, hp: 7, art: 'hedgehog',
@@ -182,9 +206,18 @@ export const SPECIES_LIST = [
     ability: A('ON_AFTER_ATTACK', { op: 'buff', target: 'self' }, atkUp(2, 3, 4)),
   },
   {
-    id: 'T3-04', name: '뱀파이어', tier: 3, atk: 6, hp: 8, art: 'vampire',
+    id: 'T3-04', name: '뱀파이어', tier: 3, atk: 6, hp: 8, art: 'vampire', manaUnit: true,
     silhouette: '높게 솟은 옷깃 + 박쥐형 망토',
-    ability: A('ON_AFTER_ATTACK', { op: 'heal', target: 'self' }, amt(2, 4, 6)),
+    ability: manaGate('ON_AFTER_ATTACK', {
+      1: { gain: 1, threshold: 3, then: { op: 'heal', target: 'self', amount: 4 } },
+      3: { gain: 2, threshold: 3, then: { op: 'heal', target: 'self', amount: 6 } },
+      5: {
+        gain: 2, threshold: 3, then: {
+          op: 'multi',
+          effects: [{ op: 'heal', target: 'self', amount: 8 }, { op: 'buff', target: 'self', atk: 2 }],
+        },
+      },
+    }),
   },
   {
     id: 'T3-05', name: '켄타우로스', tier: 3, atk: 7, hp: 6, art: 'centaur',
@@ -240,9 +273,13 @@ export const SPECIES_LIST = [
     ability: A('ON_ROTATE', { op: 'shield', target: 'allAlly' }, amt(1, 2, 3)),
   },
   {
-    id: 'T4-05', name: '리치', tier: 4, atk: 7, hp: 11, art: 'lich',
+    id: 'T4-05', name: '리치', tier: 4, atk: 7, hp: 11, art: 'lich', manaUnit: true,
     silhouette: '왕관 + 로브 + 떠 있는 지팡이',
-    ability: A('ON_ALLY_DEATH', { op: 'damage', target: 'randomEnemy' }, amt(4, 6, 8)),
+    ability: manaGate('ON_ALLY_DEATH', {
+      1: { gain: 2, threshold: 4, then: { op: 'damage', target: 'randomEnemy', amount: 6 } },
+      3: { gain: 2, threshold: 4, then: { op: 'damage', target: 'randomEnemy', amount: 9 } },
+      5: { gain: 3, threshold: 4, then: { op: 'damage', target: 'randomEnemy', amount: 12 } },
+    }),
   },
   {
     id: 'T4-06', name: '마녀', tier: 4, atk: 7, hp: 11, art: 'witch',
@@ -250,9 +287,13 @@ export const SPECIES_LIST = [
     ability: A('ON_ITEM_USE', { op: 'permBuff', target: 'backUnit' }, atkUp(1, 2, 3)),
   },
   {
-    id: 'T4-07', name: '연금술사', tier: 4, atk: 6, hp: 13, art: 'alchemist',
+    id: 'T4-07', name: '연금술사', tier: 4, atk: 6, hp: 13, art: 'alchemist', manaSupply: true,
     silhouette: '원형 고글 + 허리의 플라스크 묶음',
-    ability: A('ON_ITEM_USE', { op: 'permBuff', target: 'itemTarget' }, hpUp(2, 3, 4)),
+    ability: A('ON_ROTATE', { op: 'grantMana', amount: 1 }, [
+      { target: 'frontManaUnit' },
+      { target: 'frontAndBackManaUnits' },
+      { target: 'allAllyManaUnits' },
+    ]),
   },
   {
     id: 'T4-08', name: '밴시', tier: 4, atk: 11, hp: 3, art: 'banshee',
@@ -315,9 +356,23 @@ export const SPECIES_LIST = [
     ]),
   },
   {
-    id: 'T5-08', name: '성직자', tier: 5, atk: 8, hp: 16, art: 'priest',
+    id: 'T5-08', name: '성직자', tier: 5, atk: 8, hp: 16, art: 'priest', manaUnit: true,
     silhouette: '긴 예복 + 지팡이와 향로',
-    ability: A('ON_ROTATE', { op: 'heal', target: 'allAlly' }, amt(2, 3, 4)),
+    ability: manaGate('ON_ROTATE', {
+      1: { gain: 1, threshold: 4, then: { op: 'heal', target: 'allAlly', amount: 5 } },
+      3: {
+        gain: 2, threshold: 4, then: {
+          op: 'multi',
+          effects: [{ op: 'heal', target: 'allAlly', amount: 7 }, { op: 'shield', target: 'allAlly', amount: 2 }],
+        },
+      },
+      5: {
+        gain: 2, threshold: 3, then: {
+          op: 'multi',
+          effects: [{ op: 'heal', target: 'allAlly', amount: 9 }, { op: 'shield', target: 'allAlly', amount: 4 }],
+        },
+      },
+    }),
   },
   {
     id: 'T5-09', name: '크라켄', tier: 5, atk: 10, hp: 12, art: 'kraken',
@@ -398,9 +453,28 @@ export const SPECIES_LIST = [
     ]),
   },
   {
-    id: 'T6-10', name: '멀린', tier: 6, atk: 8, hp: 24, art: 'merlin',
+    id: 'T6-10', name: '멀린', tier: 6, atk: 8, hp: 24, art: 'merlin', manaUnit: true,
     silhouette: '길고 휘어진 모자 + 별 장식 지팡이',
-    ability: A('ON_ITEM_USE', { op: 'copyItem', target: 'backUnit' }, pct(50, 75, 100)),
+    ability: manaGate('ON_ROTATE', {
+      1: {
+        gain: 2, threshold: 6, then: {
+          op: 'multi',
+          effects: [{ op: 'buff', target: 'allAlly', atk: 4 }, { op: 'shield', target: 'allAlly', amount: 4 }],
+        },
+      },
+      3: {
+        gain: 3, threshold: 6, then: {
+          op: 'multi',
+          effects: [{ op: 'buff', target: 'allAlly', atk: 6 }, { op: 'shield', target: 'allAlly', amount: 6 }],
+        },
+      },
+      5: {
+        gain: 3, threshold: 5, then: {
+          op: 'multi',
+          effects: [{ op: 'buff', target: 'allAlly', atk: 8 }, { op: 'shield', target: 'allAlly', amount: 8 }],
+        },
+      },
+    }),
   },
 ];
 

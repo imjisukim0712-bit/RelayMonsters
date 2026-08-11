@@ -58,6 +58,13 @@ export function unitSpecies(u) {
   return anySpecies(u.speciesId);
 }
 
+// 종 정의의 능력 목록. 대부분은 ability 하나, 마나 유닛 일부는 abilities 배열(트리거가 다른 능력 둘)을 쓴다.
+export function speciesAbilityList(sp) {
+  if (!sp) return [];
+  if (sp.abilities) return sp.abilities;
+  return sp.ability ? [sp.ability] : [];
+}
+
 export function unitLevel(u) {
   return levelFromExp(u.exp);
 }
@@ -77,10 +84,11 @@ export function unitName(u) {
 }
 
 // 종 고유 능력 + 아이템으로 부여된 능력
+// 마나 유닛(미라 등)처럼 한 종이 서로 다른 트리거의 능력 둘을 가질 수 있어 abilities 배열도 지원한다.
 export function unitAbilities(u) {
   const sp = unitSpecies(u);
   const list = [];
-  if (sp.ability) list.push({ source: 'species', speciesId: sp.id, ...sp.ability });
+  for (const a of speciesAbilityList(sp)) list.push({ source: 'species', speciesId: sp.id, ...a });
   for (const gid of u.granted || []) {
     const g = GRANTED_ABILITIES[gid];
     if (g) list.push({ source: 'granted', grantId: g.id, label: g.label, trigger: g.trigger, flat: g.flat });

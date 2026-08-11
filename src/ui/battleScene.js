@@ -10,7 +10,7 @@ import { MAX_TURNS } from '../engine/battle.js';
 const BASE_ROTATE_MS = 420; // 기본 1칸 회전 시간 0.42초
 const DELAYS = {
   battle_start: 420, turn_start: 200, attack: 250, trigger: 300, damage: 230,
-  heal: 190, shield: 190, buff: 170, debuff: 170, mark: 190, note: 150,
+  heal: 190, shield: 190, buff: 170, debuff: 170, mark: 190, note: 150, mana: 170,
   death: 320, compress: 220, summon: 300, revive: 340, rotate: BASE_ROTATE_MS + 60,
   lap: 260, end: 500, log: 0,
 };
@@ -181,6 +181,17 @@ export function playBattle(root, {
       }
       sh.querySelector('.v').textContent = u.shield;
     } else if (sh) sh.remove();
+    if (u.manaUnit) {
+      let mn = node.querySelector('.chip-mana');
+      if (!mn) {
+        mn = document.createElement('span');
+        mn.className = 'chip chip-mana';
+        mn.title = '마나';
+        mn.innerHTML = `${ICONS.mana}<span class="v">0<span class="chip-sub">/${u.maxMana}</span></span>`;
+        node.querySelector('.chips').appendChild(mn);
+      }
+      mn.querySelector('.v').innerHTML = `${u.mana}<span class="chip-sub">/${u.maxMana}</span>`;
+    }
     const ratio = u.maxHp ? Math.max(0, u.hp) / u.maxHp : 1;
     node.classList.toggle('hurt', ratio <= 0.34);
   }
@@ -380,6 +391,10 @@ export function playBattle(root, {
         case 'mark':
           ensureUnits(ev.snap);
           if (!skip) floatText(ev.uid, `다음 피해 +${ev.amount}`, 'debuff');
+          break;
+        case 'mana':
+          ensureUnits(ev.snap);
+          if (!skip) { floatText(ev.uid, `마나 +${ev.amount}`, 'mana'); pulse(ev.uid, 'mana-lit', 420); }
           break;
         case 'note':
           if (!skip) floatText(ev.uid, ev.text, 'buff');

@@ -4,7 +4,7 @@
 
 import { makeRng } from '../engine/rng.js';
 import { SPECIES_LIST, speciesById } from './species.js';
-import { createUnit } from '../engine/unit.js';
+import { createUnit, speciesAbilityList } from '../engine/unit.js';
 
 export const BOT_VARIANTS = [
   {
@@ -64,7 +64,7 @@ export function presetBot(round, variantIdx) {
   const tier = shopTierForRound(round);
 
   const themed = SPECIES_LIST.filter(
-    (s) => s.tier <= tier && s.ability && variant.triggers.includes(s.ability.trigger),
+    (s) => s.tier <= tier && speciesAbilityList(s).some((a) => variant.triggers.includes(a.trigger)),
   );
   const anyPool = SPECIES_LIST.filter((s) => s.tier <= tier);
 

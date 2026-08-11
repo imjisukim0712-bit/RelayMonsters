@@ -57,6 +57,10 @@ function toBattleUnit(runUnit, teamIdx) {
     overkill: 0,
     revived: false,
     summoned: false,
+    manaUnit: !!sp.manaUnit,
+    manaSupply: !!sp.manaSupply,
+    mana: 0,
+    maxMana: 10,
   };
 }
 
@@ -68,6 +72,7 @@ function makeSummon(spLike, atk, hp, teamIdx) {
     atk, baseAtk: atk, hp, maxHp: hp, shield: 0, alive: true, lapCount: 0,
     thisAttackBonus: 0, nextAttackBonus: 0, damageUp: {}, usedTurn: {}, usedRotation: {},
     usedBattle: {}, killedBy: null, overkill: 0, revived: false, summoned: true,
+    manaUnit: false, manaSupply: false, mana: 0, maxMana: 0,
   };
 }
 
@@ -80,6 +85,7 @@ function snapTeam(team) {
       atk: u.atk, hp: Math.max(0, u.hp), maxHp: u.maxHp, shield: u.shield,
       level: u.level, abilKey: u.abilKey, lapCount: u.lapCount,
       trigger: u.abilities[0]?.trigger || null,
+      manaUnit: u.manaUnit, mana: u.mana, maxMana: u.maxMana,
     })),
   };
 }
@@ -160,6 +166,25 @@ function resolveTargets(state, unit, effect, ctx) {
       return alive(t) ? [t] : [];
     }
     case 'neighbors': return neighborUnits(ownTeam(state, unit), unit).filter(alive);
+    case 'killedBy': return alive(unit.killedBy) ? [unit.killedBy] : [];
+    // 연금술사(마나 공급 유닛) 전용 대상 — 마나 유닛이 아닌 아군은 걸러낸다 (6.2절)
+    case 'frontManaUnit': {
+      const t = aheadUnit(ownTeam(state, unit), unit);
+      return alive(t) && t.manaUnit ? [t] : [];
+    }
+    case 'backManaUnit': {
+      const t = behindUnit(ownTeam(state, unit), unit);
+      return alive(t) && t.manaUnit ? [t] : [];
+    }
+    case 'frontAndBackManaUnits': {
+      const f = aheadUnit(ownTeam(state, unit), unit);
+      const b = behindUnit(ownTeam(state, unit), unit);
+      const out = [];
+      if (alive(f) && f.manaUnit) out.push(f);
+      if (alive(b) && b.manaUnit && b !== f) out.push(b);
+      return out;
+    }
+    case 'allAllyManaUnits': return allies(state, unit).filter((u) => u.manaUnit);
     default: return [];
   }
 }
@@ -229,6 +254,35 @@ function debuffAtk(state, target, amount) {
   if (!target || !target.alive || amount <= 0) return;
   target.atk = Math.max(0, target.atk - amount); // 공격력은 0 미만이 되지 않는다
   emit(state, 'debuff', { uid: target.uid, atk: -amount });
+}
+
+// ── 마나 (5.4절) ──────────────────────────────────────────────────
+// 마나 유닛만 마나를 보유한다. 최대 10, 전투 종료 시 0으로 초기화(새 전투마다 재생성되므로 자동 충족).
+function gainMana(state, target, amount) {
+  if (!target || !target.alive || !target.manaUnit || amount <= 0) return;
+  const before = target.mana;
+  target.mana = Math.min(target.maxMana || 10, target.mana + amount);
+  if (target.mana !== before) emit(state, 'mana', { uid: target.uid, amount: target.mana - before, mana: target.mana });
+}
+
+// 마나를 얻은 유닛의 현재 레벨 능력 중 마나 조건(manaGate)을 확인해 충족하면 즉시 발동한다.
+// 자기 트리거로 얻었든 다른 유닛이 부여했든 같은 규칙을 따른다 (6.2절) — 한 번의 획득 이벤트당 1회.
+function checkManaGates(state, unit, ctx) {
+  if (!unit || !unit.alive) return;
+  unit.abilities.forEach((ability) => {
+    const eff = abilityEffect(ability, unit.level);
+    if (!eff) return;
+    const gates = eff.op === 'manaGate' ? [eff] : (eff.op === 'multi' ? (eff.effects || []).filter((e) => e.op === 'manaGate') : []);
+    for (const gate of gates) {
+      if (unit.mana < gate.threshold) continue;
+      unit.mana -= gate.threshold;
+      emit(state, 'trigger', {
+        uid: unit.uid, trigger: ability.trigger, label: '마나', text: effectText(gate.then),
+      });
+      logLine(state, `${unit.name} · 마나 ${gate.threshold} → ${effectText(gate.then)}`);
+      applyEffect(state, unit, gate.then, ctx);
+    }
+  });
 }
 
 // ── 효과 실행 ─────────────────────────────────────────────────────
@@ -309,6 +363,23 @@ function applyEffect(state, unit, effect, ctx) {
       for (const t of pool.slice(0, effect.count || 1)) dealDamage(state, unit, t, dmg);
       break;
     }
+    case 'gainMana':
+      gainMana(state, unit, effect.amount);
+      checkManaGates(state, unit, ctx);
+      break;
+    case 'manaGate':
+      gainMana(state, unit, effect.gain);
+      checkManaGates(state, unit, ctx);
+      break;
+    case 'grantMana':
+      for (const t of targets) { gainMana(state, t, effect.amount); checkManaGates(state, t, ctx); }
+      break;
+    case 'manaValueDamage': {
+      const mana = unit.mana; // 보유 마나 — 효과 해결 직전의 현재 마나 수치
+      const amount = effect.mode === 'double' ? mana * 2 : effect.mode === 'plus' ? mana + (effect.bonus || 0) : mana;
+      for (const t of targets) dealDamage(state, unit, t, amount);
+      break;
+    }
     default:
       break;
   }
@@ -347,10 +418,14 @@ function fireOn(state, unit, trigger, ctx = {}) {
       if (ability.oncePerRotation) unit.usedRotation[key] = true;
       if (ability.oncePerBattle) unit.usedBattle[key] = true;
 
+      // manaGate 는 능력 문구 전체("마나 획득 / 마나 n → 효과")를 늘 보여주지만,
+      // 실시간 로그에는 이번에 실제로 일어난 마나 획득만 알린다. 조건을 만족한 효과는
+      // checkManaGates 가 그 순간 별도로 알린다.
+      const liveText = eff.op === 'manaGate' ? `마나 ${eff.gain} 획득` : effectText(eff);
       emit(state, 'trigger', {
-        uid: unit.uid, trigger, label: triggerName(trigger), text: effectText(eff),
+        uid: unit.uid, trigger, label: triggerName(trigger), text: liveText,
       });
-      logLine(state, `${unit.name} · ${triggerName(trigger)} → ${effectText(eff)}`);
+      logLine(state, `${unit.name} · ${triggerName(trigger)} → ${liveText}`);
       applyEffect(state, unit, eff, ctx);
     });
   } finally {

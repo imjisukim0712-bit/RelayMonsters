@@ -4,7 +4,8 @@ import { SPECIES_LIST, TIER_COLORS, TIER_NAMES, TIER_BUDGET, TRIGGERS } from '..
 import { ITEM_LIST } from '../data/items.js';
 import { itemSprite } from '../art/items.js';
 import { sprite, statChips } from './unitView.js';
-import { abilityLines } from '../engine/text.js';
+import { speciesAbilityLines } from '../engine/text.js';
+import { speciesAbilityList } from '../engine/unit.js';
 import { getMeta } from '../storage/save.js';
 import { modal } from './dom.js';
 import { MAX_TURNS } from '../engine/battle.js';
@@ -17,7 +18,8 @@ export function renderCodex(root, { onBack }) {
     const meta = getMeta();
     const seen = new Set(meta.seenSpecies || []);
     const list = SPECIES_LIST.filter(
-      (s) => (!filterTier || s.tier === filterTier) && (!filterTrigger || s.ability?.trigger === filterTrigger),
+      (s) => (!filterTier || s.tier === filterTier)
+        && (!filterTrigger || speciesAbilityList(s).some((a) => a.trigger === filterTrigger)),
     );
 
     root.innerHTML = `
@@ -51,13 +53,14 @@ export function renderCodex(root, { onBack }) {
   }
 
   function codexCard(s, seenIt) {
-    const lines = s.ability ? abilityLines(s.ability) : [];
+    const lines = speciesAbilityLines(speciesAbilityList(s));
+    const manaTag = s.manaUnit ? '<span class="mana-tag">마나 유닛</span>' : s.manaSupply ? '<span class="mana-tag">마나 공급 유닛</span>' : '';
     return `<article class="codex-card${seenIt ? ' seen' : ''}" data-id="${s.id}" style="--tier:${TIER_COLORS[s.tier]}">
       <div class="cc-top">
         <div class="cc-art">${sprite(s.art)}</div>
         <div class="cc-head">
-          <div class="cc-name">${s.name} <span class="tier-tag">${s.id}</span></div>
-          ${statChips({ atk: s.atk, hp: s.hp })}
+          <div class="cc-name">${s.name} <span class="tier-tag">${s.id}</span>${manaTag}</div>
+          ${statChips({ atk: s.atk, hp: s.hp, manaUnit: !!s.manaUnit, mana: 0, maxMana: 10 })}
           <div class="cc-budget">예산 ${s.atk * 2 + s.hp}/${TIER_BUDGET[s.tier]}</div>
         </div>
       </div>

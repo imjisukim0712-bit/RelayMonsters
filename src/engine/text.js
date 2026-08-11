@@ -42,6 +42,7 @@ export function targetName(effect) {
     case 'backUnit': return '뒤 유닛';
     case 'neighbors': return '앞 유닛과 뒤 유닛';
     case 'itemTarget': return '아이템 대상';
+    case 'killedBy': return '자신을 처치한 적';
     default: return '대상';
   }
 }
@@ -124,6 +125,22 @@ export function effectText(effect, bare = false) {
     }
     case 'copyItem':
       return `사용한 아이템의 수치 효과 ${effect.pct}%를 ${t}에게 복제${effect.pct < 100 ? ', 소수점 버림' : ''}`;
+    case 'gainMana':
+      return `마나 ${effect.amount} 획득`;
+    case 'manaGate':
+      return `마나 ${effect.gain} 획득 / 마나 ${effect.threshold} → ${effectText(effect.then)}`;
+    case 'manaValueDamage': {
+      if (effect.mode === 'double') return `${t}에게 보유 마나의 2배 피해`;
+      if (effect.mode === 'plus') return `${t}에게 보유 마나 +${effect.bonus} 피해`;
+      return `${t}에게 보유 마나만큼 피해`;
+    }
+    case 'grantMana':
+      switch (effect.target) {
+        case 'frontManaUnit': return `앞 유닛이 마나 유닛이면 마나 ${effect.amount} 부여`;
+        case 'frontAndBackManaUnits': return `앞 유닛과 뒤 유닛이 마나 유닛이면 각각 마나 ${effect.amount} 부여`;
+        case 'allAllyManaUnits': return `모든 아군 마나 유닛에게 마나 ${effect.amount} 부여`;
+        default: return `${t}에게 마나 ${effect.amount} 부여`;
+      }
     default:
       return effect.op;
   }
@@ -151,4 +168,12 @@ export function abilityLine(ability, levelKey) {
 export function abilityLines(ability) {
   if (ability.flat) return [{ key: 0, text: abilityLine(ability, 0) }];
   return [1, 3, 5].map((k) => ({ key: k, text: abilityLine(ability, k) }));
+}
+
+// 종의 능력이 둘 이상이면(미라처럼 트리거가 다른 마나 획득/사용 능력 조합) 한 줄로 이어붙인다.
+// "획득 기믹 → 마나 획득 / 마나 조건 → 능력 발동" 두 조각 표기 (5.4절)
+export function speciesAbilityLines(abilities) {
+  if (!abilities.length) return [];
+  if (abilities.length === 1) return abilityLines(abilities[0]);
+  return [1, 3, 5].map((k) => ({ key: k, text: abilities.map((a) => abilityLine(a, k)).join(' / ') }));
 }

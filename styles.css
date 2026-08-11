@@ -12,6 +12,7 @@
   --hp: #EF476F;
   --atk: #FF9F43;
   --shield: #3D8BFD;
+  --mana: #7C4DFF;
   --perm: #8CC63F;
   --gold: #E8A93C;
   --line: rgba(43, 43, 58, 0.16);
@@ -146,6 +147,7 @@ small { font-size: 14px; }
 .chip-atk { color: #B05F09; } .chip-atk .ico { color: var(--atk); }
 .chip-hp { color: #B02246; } .chip-hp .ico { color: var(--hp); }
 .chip-shield { color: #1E5EB8; } .chip-shield .ico { color: var(--shield); }
+.chip-mana { color: #5C2DBF; } .chip-mana .ico { color: var(--mana); }
 .chip-sub { font-size: 11px; opacity: .65; font-weight: 700; }
 
 .badge {
@@ -171,6 +173,7 @@ small { font-size: 14px; }
 .unit.hit .unit-body { animation: shake .28s; }
 .unit.dying .unit-body { animation: dying .3s forwards; }
 .unit.shielded .unit-ring { border-color: var(--shield); opacity: 1; }
+.unit.mana-lit .unit-ring { border-color: var(--mana); opacity: 1; }
 .unit.lapped .unit-ring { border-color: var(--gold); opacity: 1; box-shadow: 0 0 0 6px rgba(255, 201, 60, .4); }
 .unit.spawn .unit-body { animation: pop .28s; }
 @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
@@ -216,6 +219,7 @@ small { font-size: 14px; }
 .float-shield { color: #1E5EB8; background: #DEEBFF; }
 .float-buff { color: #7A5A0A; background: #FFF1CC; }
 .float-debuff { color: #5C3B7A; background: #EFE2FA; }
+.float-mana { color: #5C2DBF; background: #ECE3FF; }
 .float-trigger { color: var(--out); background: #FFF6E0; font-size: 14px; }
 @keyframes floatUp {
   0% { opacity: 0; transform: translate(-50%, -30%) scale(.85); }
@@ -387,6 +391,10 @@ small { font-size: 14px; }
 .abil li.dim { opacity: .5; }
 .granted { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
 .granted-tag { font-size: 13px; background: #EFE9D8; border-radius: 8px; padding: 3px 8px; }
+.mana-tag {
+  font-size: 12px; font-weight: 800; color: #5C2DBF;
+  background: #ECE3FF; border-radius: 999px; padding: 2px 8px;
+}
 .silhouette { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
 .detail-actions { margin-top: 14px; display: flex; gap: 8px; justify-content: flex-end; }
 
