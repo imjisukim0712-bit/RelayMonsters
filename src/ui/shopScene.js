@@ -18,6 +18,38 @@ import { saveRun } from '../storage/save.js';
 
 export function renderShop(root, { run, onStartBattle, onQuit }) {
   let selectedItem = null; // 대상 지정 대기 중인 소모품
+  let selectedOfferId = run.shop.units[0]?.oid || null;
+  let selectedUnitId = null;
+
+  function selectedDetail() {
+    const offer = run.shop.units.find((o) => o.oid === selectedOfferId);
+    if (offer) {
+      const fake = {
+        id: 'preview', speciesId: offer.speciesId, exp: offer.exp,
+        permBuff: { atk: 0, hp: 0 }, granted: [],
+      };
+      return detailPanel(fake, {
+        extra: `<div class="detail-actions detail-inline-actions">
+          <span class="detail-price"><b>${offer.price}</b>G</span>
+          <button class="btn primary" id="detailBuyBtn">구매</button>
+        </div>`,
+      });
+    }
+    const unit = run.ring.find((u) => u.id === selectedUnitId) || run.ring[0];
+    if (unit) {
+      return detailPanel(unit, {
+        extra: `<div class="detail-actions detail-inline-actions">
+          <span class="detail-owned">링 ${run.ring.indexOf(unit) + 1}번 슬롯</span>
+          <button class="btn ghost" id="detailSellBtn">판매 +${sellValue(unit)}G</button>
+        </div>`,
+      });
+    }
+    return `<div class="detail-empty">
+      <span class="detail-empty-icon">✦</span>
+      <b>몬스터를 선택하세요</b>
+      <small>상점 카드나 링 위의 몬스터를 누르면<br>능력과 성장 정보를 확인할 수 있습니다.</small>
+    </div>`;
+  }
 
   function html() {
     const tier = run.shopTier;
@@ -25,45 +57,64 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
   <div class="scene shop-scene">
     <header class="hud">
       <div class="hud-left">
-        <span class="hud-round">R${run.round}<i>/18</i></span>
-        <span class="hud-lives">${lifeIcons(run.lives)}</span>
-        <span class="hud-gold"><b>${run.gold}</b>G</span>
-        <span class="hud-tier" title="상점 티어">상점 T${tier} · 유닛 ${unitSlotsForTier(tier)}칸</span>
+        <span class="hud-card hud-gold"><i class="hud-coin">◆</i><b>${run.gold}</b></span>
+        <span class="hud-card hud-lives">${lifeIcons(run.lives)}</span>
+        <span class="hud-card hud-round"><i class="hud-swords">⚔</i><b>${run.round}</b><em>/18</em></span>
       </div>
       <div class="hud-right">
         <span class="hud-band">${roundBandLabel(run.round)}</span>
-        <button class="btn tiny ghost" id="rerollBtn">리롤 ${REROLL_PRICE}G</button>
-        <button class="btn primary" id="startBtn">전투 시작</button>
-        <button class="btn tiny ghost" id="quitBtn" title="메인 메뉴">메뉴</button>
+        <span class="hud-tier" title="상점 티어">T${tier} 상점 · ${unitSlotsForTier(tier)}칸</span>
+        <button class="icon-btn utility" id="quitBtn" title="메인 메뉴" aria-label="메인 메뉴">☰</button>
       </div>
     </header>
 
-    <section class="ring-panel">
-      <div class="ring-head">
-        <h2>내 링 <small>드래그로 순서 변경 · 같은 종끼리 겹치면 합치기</small></h2>
-        <div class="ring-info">${ringInfo(run)}</div>
-      </div>
-      <div class="ring-stage" id="ringStage">
-        <div class="ring-track"></div>
-        <div class="front-hint"><span>1번 = 첫 등판</span></div>
-        ${run.ring.length === 0 ? '<div class="ring-empty">상점에서 유닛을 링으로 끌어오세요</div>' : ''}
-      </div>
-      <div class="ring-order" id="ringOrder">${orderStrip(run)}</div>
-    </section>
+    <main class="shop-workspace">
+      <section class="ring-panel">
+        <div class="ring-head">
+          <div>
+            <span class="eyebrow">RELAY FORMATION</span>
+            <h2>내 링 <small>몬스터를 끌어서 등판 순서를 바꾸세요</small></h2>
+          </div>
+          <div class="ring-head-actions">
+            <div class="ring-info">${ringInfo(run)}</div>
+            <button class="btn tiny reroll-btn" id="rerollBtn">↻ 리롤 <b>${REROLL_PRICE}G</b></button>
+          </div>
+        </div>
+        <div class="ring-stage" id="ringStage">
+          <div class="ring-map-decor" aria-hidden="true"></div>
+          <div class="ring-track"></div>
+          <div class="front-hint"><span>1</span><small>첫 등판</small></div>
+          ${run.ring.length === 0 ? '<div class="ring-empty">상점의 몬스터를 이곳으로 끌어오세요</div>' : ''}
+        </div>
+        <div class="ring-order" id="ringOrder">${orderStrip(run)}</div>
+      </section>
 
-    <section class="shop-panel">
-      <div class="shop-units" id="shopUnits">
-        ${run.shop.units.map((o) => shopUnitCard(o)).join('')
-      || '<div class="sold-out">모두 판매되었습니다 — 리롤하거나 전투를 시작하세요</div>'}
+      <aside class="shop-detail-panel" id="shopDetail">${selectedDetail()}</aside>
+    </main>
+
+    <section class="shop-dock">
+      <div class="shop-panel">
+        <div class="shop-units" id="shopUnits">
+          ${run.shop.units.map((o) => shopUnitCard(o)).join('')
+        || '<div class="sold-out">모두 판매되었습니다 — 리롤하거나 웨이브를 진행하세요</div>'}
+        </div>
+        <div class="shop-side">
+          <div class="shop-items" id="shopItems">
+            ${run.shop.items.map((o) => shopItemCard(o)).join('') || '<div class="sold-out small">소모품 매진</div>'}
+          </div>
+          <div class="sell-zone" data-drop="sell" id="sellZone">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>판매</span><small>몬스터를 끌어놓기</small>
+          </div>
+        </div>
       </div>
-      <div class="shop-side">
-        <div class="shop-items" id="shopItems">
-          ${run.shop.items.map((o) => shopItemCard(o)).join('') || '<div class="sold-out small">소모품 매진</div>'}
-        </div>
-        <div class="sell-zone" data-drop="sell" id="sellZone">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>판매</span><small>여기로 끌어놓기</small>
-        </div>
+      <div class="shop-actions">
+        <button class="btn action-buy" id="buySelectedBtn" ${run.shop.units.some((o) => o.oid === selectedOfferId) ? '' : 'disabled'}>
+          <span>구매</span><small>선택한 몬스터</small>
+        </button>
+        <button class="btn action-wave" id="startBtn">
+          <span>웨이브 진행</span><small>R${run.round} 전투 시작</small>
+        </button>
       </div>
     </section>
   </div>`;
@@ -94,7 +145,7 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
     const sp = speciesById(offer.speciesId);
     const atk = sp.atk + offer.exp;
     const hp = sp.hp + offer.exp;
-    return `<div class="pedestal draggable" data-drag="shop" data-oid="${offer.oid}" data-species="${sp.id}" style="--tier:${TIER_COLORS[sp.tier]}">
+    return `<div class="pedestal draggable${offer.oid === selectedOfferId ? ' selected' : ''}" data-drag="shop" data-oid="${offer.oid}" data-species="${sp.id}" style="--tier:${TIER_COLORS[sp.tier]}">
       <div class="ped-disc"></div>
       <div class="ped-unit">${sprite(sp.art)}</div>
       <div class="ped-meta">
@@ -153,7 +204,7 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
       const wrap = document.createElement('div');
       wrap.innerHTML = unitStand(view, {
         showName: !compact, slotLabel: i + 1, id: u.id, front: i === 0,
-        className: 'draggable', flip: false,
+        selected: u.id === selectedUnitId, className: 'draggable', flip: false,
       });
       const node = wrap.firstElementChild;
       node.classList.add('ring-unit');
@@ -357,11 +408,14 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
       return;
     }
     if (handle.dataset.drag === 'shop') {
-      report(buyUnit(run, handle.dataset.oid));
+      selectedOfferId = handle.dataset.oid;
+      selectedUnitId = null;
       rerender();
       return;
     }
-    openDetail(handle);
+    selectedUnitId = handle.dataset.id;
+    selectedOfferId = null;
+    rerender();
   }
 
   function openDetail(handle) {
@@ -422,7 +476,23 @@ export function renderShop(root, { run, onStartBattle, onQuit }) {
   function bind() {
     qs('#rerollBtn', root)?.addEventListener('click', () => {
       report(reroll(run));
+      selectedOfferId = run.shop.units[0]?.oid || null;
+      selectedUnitId = null;
       rerender();
+    });
+    const buySelected = () => {
+      const offer = run.shop.units.find((o) => o.oid === selectedOfferId);
+      if (!offer) { toast('구매할 몬스터를 먼저 선택하세요', 'info'); return; }
+      report(buyUnit(run, offer.oid));
+      selectedOfferId = run.shop.units[0]?.oid || null;
+      selectedUnitId = null;
+      rerender();
+    };
+    qs('#buySelectedBtn', root)?.addEventListener('click', buySelected);
+    qs('#detailBuyBtn', root)?.addEventListener('click', buySelected);
+    qs('#detailSellBtn', root)?.addEventListener('click', () => {
+      const unit = run.ring.find((u) => u.id === selectedUnitId) || run.ring[0];
+      if (unit) doSell(unit.id);
     });
     qs('#startBtn', root)?.addEventListener('click', async () => {
       if (!run.ring.length) { toast('링에 유닛이 최소 1마리 필요합니다', 'warn'); return; }

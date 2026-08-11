@@ -43,15 +43,18 @@ export function modal(innerHtml, { onClose, wide = false } = {}) {
   const back = el('div', { class: 'modal-back' });
   const box = el('div', { class: `modal${wide ? ' wide' : ''}` }, innerHtml);
   const close = el('button', { class: 'modal-close', 'aria-label': '닫기' }, '✕');
+  let closed = false;
+  const esc = (e) => { if (e.key === 'Escape') done(); };
   const done = () => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('keydown', esc);
     back.remove();
     if (onClose) onClose();
   };
   close.addEventListener('click', done);
   back.addEventListener('click', (e) => { if (e.target === back) done(); });
-  document.addEventListener('keydown', function esc(e) {
-    if (e.key === 'Escape') { done(); document.removeEventListener('keydown', esc); }
-  });
+  document.addEventListener('keydown', esc);
   box.appendChild(close);
   back.appendChild(box);
   document.body.appendChild(back);
