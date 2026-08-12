@@ -93,38 +93,48 @@ jobs:
 
       # 이 러너는 실제 인터넷에 붙어 있으므로, 배포된 Worker 를 즉시 실제로 호출해
       # 헬스체크와 업로드→조회 라운드 트립까지 검증한다 (샌드박스 egress 정책으로는 못 함).
+      # 배포 직후에는 Cloudflare 엣지 전파 지연으로 이전 버전이 잠깐 응답할 수 있어 재시도한다.
       - name: Smoke test the deployed Worker
         run: |
-          set -e
           URL="${{ steps.report.outputs.url }}"
-          echo "-- health --"
-          curl -sf "$URL/health" | tee health.json
-          echo
-          echo "-- upload --"
           SNAP_ID="s_ci_smoke_$(date +%s)"
-          curl -sf -X POST "$URL/api/snapshots" \
-            -H "Content-Type: application/json" -H "X-Owner-Id: ci-smoke-test" \
-            -d "{\"snapshotId\":\"$SNAP_ID\",\"round\":1,\"wins\":1,\"lives\":3,\"teamName\":\"CI 스모크팀\",\"ring\":[{\"speciesId\":\"T1-01\",\"exp\":1}]}" \
-            | tee upload.json
-          echo
-          echo "-- fetch (다른 owner 로 조회, 방금 올린 스냅샷이 보여야 함) --"
-          curl -sf "$URL/api/snapshots?round=1" -H "X-Owner-Id: someone-else" | tee fetch.json
-          echo
-          node -e "
-            const fs = require('fs');
-            const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
-            if (!health.ok) throw new Error('health check failed: ' + JSON.stringify(health));
-            const upload = JSON.parse(fs.readFileSync('upload.json', 'utf8'));
-            if (!upload.ok) throw new Error('upload failed: ' + JSON.stringify(upload));
-            const fetched = JSON.parse(fs.readFileSync('fetch.json', 'utf8'));
-            const found = Array.isArray(fetched) && fetched.find((s) => s.snapshotId === '$SNAP_ID');
-            if (!found) {
-              throw new Error('업로드한 스냅샷을 조회 결과에서 찾지 못했습니다: ' + JSON.stringify(fetched));
-            }
-            if (found.teamName !== 'CI 스모크팀') {
-              throw new Error('teamName 이 왕복되지 않았습니다: ' + JSON.stringify(found));
-            }
-            console.log('스모크 테스트 통과 — 업로드/조회 라운드 트립 확인됨 (teamName 포함)');
-          "
-          echo "### 스모크 테스트" >> "$GITHUB_STEP_SUMMARY"
-          echo "헬스체크·업로드·조회 라운드 트립 통과" >> "$GITHUB_STEP_SUMMARY"
+          ATTEMPTS=6
+          for i in $(seq 1 $ATTEMPTS); do
+            echo "== 시도 $i/$ATTEMPTS =="
+            set +e
+            echo "-- health --"; curl -sf "$URL/health" | tee health.json
+            echo; echo "-- upload --"
+            curl -sf -X POST "$URL/api/snapshots" \
+              -H "Content-Type: application/json" -H "X-Owner-Id: ci-smoke-test" \
+              -d "{\"snapshotId\":\"$SNAP_ID\",\"round\":1,\"wins\":1,\"lives\":3,\"teamName\":\"CI 스모크팀\",\"ring\":[{\"speciesId\":\"T1-01\",\"exp\":1}]}" \
+              | tee upload.json
+            echo; echo "-- fetch (다른 owner 로 조회, 방금 올린 스냅샷이 보여야 함) --"
+            curl -sf "$URL/api/snapshots?round=1" -H "X-Owner-Id: someone-else" | tee fetch.json
+            echo
+            RESULT=$(node -e "
+              const fs = require('fs');
+              try {
+                const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+                if (!health.ok) throw new Error('헬스체크 실패');
+                const upload = JSON.parse(fs.readFileSync('upload.json', 'utf8'));
+                if (!upload.ok) throw new Error('업로드 실패: ' + JSON.stringify(upload));
+                const fetched = JSON.parse(fs.readFileSync('fetch.json', 'utf8'));
+                const found = Array.isArray(fetched) && fetched.find((s) => s.snapshotId === '$SNAP_ID');
+                if (!found) throw new Error('업로드한 스냅샷을 조회 결과에서 찾지 못함: ' + JSON.stringify(fetched));
+                if (found.teamName !== 'CI 스모크팀') throw new Error('teamName 이 왕복되지 않음: ' + JSON.stringify(found));
+                console.log('PASS');
+              } catch (e) { console.log('FAIL: ' + e.message); }
+            " 2>&1)
+            set -e
+            echo "$RESULT"
+            if echo "$RESULT" | grep -q "^PASS"; then
+              echo "스모크 테스트 통과 — 업로드/조회 라운드 트립 확인됨 (teamName 포함)"
+              echo "### 스모크 테스트" >> "$GITHUB_STEP_SUMMARY"
+              echo "헬스체크·업로드·조회 라운드 트립 통과 (${i}번째 시도)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "엣지 전파 지연일 수 있어 재시도합니다…"
+            sleep 5
+          done
+          echo "::error::스모크 테스트가 ${ATTEMPTS}회 재시도 후에도 실패했습니다."
+          exit 1
