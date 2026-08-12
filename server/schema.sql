@@ -1,6 +1,7 @@
 -- Relay Monsters — 비동기 멀티 스냅샷 저장소 (D1)
 -- 문서 형태는 기획서 14.3 과 동일. owner_id 는 클라이언트가 생성한 익명 식별자로,
--- 자기 자신이 올린 스냅샷을 상대 후보에서 제외하는 데만 쓴다 (인증 아님).
+-- 조회 시 "내 것인지" 표시하는 데 쓴다(인증 아님). 자기 자신·AI 매칭 확률 계산은
+-- 클라이언트(src/storage/backend.js)가 담당한다.
 
 CREATE TABLE IF NOT EXISTS snapshots (
   id         TEXT PRIMARY KEY,

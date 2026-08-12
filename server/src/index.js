@@ -4,8 +4,9 @@
 //   POST /api/snapshots        스냅샷 업로드
 //   GET  /api/snapshots?round= 동일 라운드 스냅샷 조회 (최대 FETCH_LIMIT건)
 //
-// 인증 없음(프로토타입). owner_id 는 클라이언트가 만든 익명 식별자로,
-// 자기 자신이 올린 스냅샷을 상대 후보에서 제외하는 용도로만 쓴다.
+// 인증 없음(프로토타입). owner_id 는 클라이언트가 만든 익명 식별자다. 조회 결과에는
+// 각 스냅샷의 owner_id 를 그대로 실어 보내고, "내 것인지" 판단과 자기 자신·AI 매칭
+// 확률 계산은 클라이언트(src/storage/backend.js)가 담당한다.
 
 const FETCH_LIMIT = 40;
 const MAX_RING = 6;
@@ -82,19 +83,13 @@ async function handleFetch(request, env, origin) {
   if (!Number.isInteger(round) || round < 1 || round > MAX_ROUND) {
     return json({ error: 'round 파라미터가 필요합니다' }, 400, origin);
   }
-  const ownerId = (request.headers.get('X-Owner-Id') || '').slice(0, 128) || null;
 
-  // 자기 자신이 올린 스냅샷은 상대 후보에서 제외한다
-  const stmt = ownerId
-    ? env.DB.prepare(
-      `SELECT id, round, wins, lives, ring_json, team_name, created_at FROM snapshots
-       WHERE round = ? AND (owner_id IS NULL OR owner_id != ?)
-       ORDER BY created_at DESC LIMIT ?`,
-    ).bind(round, ownerId, FETCH_LIMIT)
-    : env.DB.prepare(
-      `SELECT id, round, wins, lives, ring_json, team_name, created_at FROM snapshots
-       WHERE round = ? ORDER BY created_at DESC LIMIT ?`,
-    ).bind(round, FETCH_LIMIT);
+  // 자기 자신 것도 그대로 포함해서 돌려준다 — 자기 자신·AI 매칭 확률은
+  // 클라이언트가 ownerId 를 보고 계산한다 (기획서 11.2 개정).
+  const stmt = env.DB.prepare(
+    `SELECT id, round, wins, lives, ring_json, team_name, owner_id, created_at FROM snapshots
+     WHERE round = ? ORDER BY created_at DESC LIMIT ?`,
+  ).bind(round, FETCH_LIMIT);
 
   const { results } = await stmt.all();
   const out = results.map((row) => ({
@@ -103,6 +98,7 @@ async function handleFetch(request, env, origin) {
     wins: row.wins,
     lives: row.lives,
     teamName: row.team_name || '',
+    ownerId: row.owner_id || null,
     createdAt: row.created_at,
     ring: JSON.parse(row.ring_json),
   }));
