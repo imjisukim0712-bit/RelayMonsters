@@ -27,22 +27,22 @@ export function playBattle(root, {
   root.innerHTML = `
   <div class="scene battle-scene">
     <header class="hud">
-      <div class="hud-top">
-        <div class="hud-left">
-          <span class="hud-round">R${run.round}<i>/18</i></span>
-          <span class="hud-lives" title="생명">${lifeIcons(run.lives)}</span>
-          <span class="hud-turn">턴 <b id="turnNum">0</b><i>/${MAX_TURNS}</i></span>
-        </div>
-        <div class="hud-right">
-          <button class="btn tiny" id="speedBtn" title="배속">1×</button>
-          <button class="btn tiny ghost" id="skipBtn" title="전투 건너뛰기">건너뛰기</button>
-        </div>
+      <div class="hud-left">
+        <span class="hud-round">R${run.round}<i>/18</i></span>
+        <span class="hud-lives" title="생명">${lifeIcons(run.lives)}</span>
+        <span class="hud-turn">턴 <b id="turnNum">0</b><i>/${MAX_TURNS}</i></span>
       </div>
-      <div class="hud-teams">
-        <span class="hud-team hud-team-ally" title="아군 팀">${escapeHtml(allyTeamName || '내 팀')}</span>
-        <span class="hud-team hud-team-enemy" title="적군 팀">${escapeHtml(enemyTeamName || '상대 팀')}</span>
+      <div class="hud-right">
+        <button class="btn tiny" id="speedBtn" title="배속">1×</button>
+        <button class="btn tiny ghost" id="skipBtn" title="전투 건너뛰기">건너뛰기</button>
       </div>
     </header>
+
+    <!-- 팀 이름은 상단 UI(라운드·생명·턴·설정)의 일부가 아니라 그 아래 줄에 둔다 -->
+    <div class="team-bar" id="teamBar">
+      <span class="hud-team hud-team-ally" title="아군 팀">${escapeHtml(allyTeamName || '내 팀')}</span>
+      <span class="hud-team hud-team-enemy" title="적군 팀">${escapeHtml(enemyTeamName || '상대 팀')}</span>
+    </div>
 
     <div class="stage" id="stage">
       ${backgroundSvg(backgroundId)}
@@ -61,6 +61,7 @@ export function playBattle(root, {
 
   const stage = root.querySelector('#stage');
   const hudEl = root.querySelector('.hud');
+  const teamBar = root.querySelector('#teamBar');
   const rings = [root.querySelector('#ringAlly'), root.querySelector('#ringEnemy')];
   const fxLayer = root.querySelector('#fxLayer');
   const logBox = root.querySelector('#battleLog');
@@ -82,10 +83,13 @@ export function playBattle(root, {
     const r = stage.getBoundingClientRect();
     geo.w = r.width;
     geo.h = r.height;
-    // 유닛이 HUD(팀 이름 줄이 추가되어 예전보다 높다) 뒤로 가려지거나 그 위를 덮지 않도록,
-    // 실제로 렌더링된 HUD 높이만큼 여백을 두고 링을 그 아래로 밀어낸다.
-    const hudRect = hudEl?.getBoundingClientRect();
-    const topSafe = (hudRect ? Math.max(0, hudRect.bottom - r.top) : 0) + 12;
+    // 팀 이름 줄을 HUD(라운드·생명·턴·배속·건너뛰기) 바로 아래에 붙인다.
+    // hud 높이는 화면 폭에 따라 바뀌므로 매 측정마다 다시 잰다.
+    const hudH = hudEl?.offsetHeight || 0;
+    if (teamBar) teamBar.style.top = `${hudH}px`;
+    // 유닛이 상단 UI(HUD + 팀 이름 줄) 뒤로 가려지거나 그 위를 덮지 않도록,
+    // 실제로 렌더링된 높이만큼 여백을 두고 링을 그 아래로 밀어낸다.
+    const topSafe = hudH + (teamBar?.offsetHeight || 0) + 12;
     const portrait = r.width / Math.max(1, r.height) < 1.25;
     if (portrait) {
       geo.maxUw = 88;

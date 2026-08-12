@@ -192,6 +192,8 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
   }
 
   // ── 링 배치 ─────────────────────────────────────────────────────
+  let ringFootH = 0; // 실측한 발밑 정보(스탯칩·이름) 높이
+  let ringSettled = false; // 실측값으로 재배치를 마쳤는지
   function layoutRing() {
     const stage = qs('#ringStage', root);
     if (!stage) return;
@@ -200,16 +202,50 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     const n = run.ring.length;
     if (!n) return;
     const maxUw = Math.min(184, Math.max(76, rect.width * .14));
+    // 유닛 한 기가 차지하는 세로 길이는 (그림 = 유닛 폭) + (발밑 스탯·이름) 이다.
+    // 발밑 정보 높이는 폭과 거의 무관하므로 실측값을 재사용한다 (첫 배치는 추정값).
+    const foot = ringFootH || 74;
 
     // 보유 수가 적어도 스케치의 6개 기준 슬롯 좌표는 변하지 않는다.
-    const spots = run.ring.map((_, i) => formationSpot(rect, i));
-    let minDist = Infinity;
-    for (let i = 0; i < spots.length; i++) {
-      for (let j = i + 1; j < spots.length; j++) {
-        minDist = Math.min(minDist, Math.hypot(spots[i].x - spots[j].x, spots[i].y - spots[j].y));
-      }
+    // 다만 무대가 낮으면 아래줄 유닛의 발밑 정보가 잘리므로, 위치를 강제로
+    // 끌어올리는 대신 편성 전체를 세로로 눌러 담아 서로 가리지 않게 한다.
+    const fracs = run.ring.map((_, i) => formationSlots[i % formationSlots.length]);
+    function spotsFor(uw) {
+      const ys = fracs.map((f) => f.y * rect.height);
+      const lo = Math.min(...ys);
+      const hi = Math.max(...ys);
+      const top = uw; // 그림 위쪽이 무대 안에 들어오는 최소 y
+      const bot = rect.height - foot; // 발밑 정보가 무대 안에 들어오는 최대 y
+      const room = Math.max(0, bot - top);
+      const scale = hi - lo > room && hi > lo ? room / (hi - lo) : 1;
+      let offset = 0;
+      if (lo * scale + offset < top) offset = top - lo * scale;
+      if (hi * scale + offset > bot) offset = bot - hi * scale;
+      return fracs.map((f) => ({
+        x: rect.width * f.x,
+        y: f.y * rect.height * scale + offset,
+      }));
     }
-    const uw = Math.max(58, Math.min(maxUw, Number.isFinite(minDist) ? minDist * 0.92 : maxUw));
+
+    // 폭이 커질수록 배치 여유가 줄어드는 상호 의존이라 몇 번 반복해 수렴시킨다.
+    let uw = Math.min(maxUw, Math.max(52, rect.height - foot));
+    for (let pass = 0; pass < 5; pass++) {
+      const s = spotsFor(uw);
+      let next = maxUw;
+      for (let i = 0; i < s.length; i++) {
+        for (let j = i + 1; j < s.length; j++) {
+          const adx = Math.abs(s[i].x - s[j].x);
+          const ady = Math.abs(s[i].y - s[j].y);
+          // 두 기가 안 겹치려면 가로로 충분히 벌어지거나(adx ≥ 폭),
+          // 세로로 그림+발밑 높이만큼 벌어져야 한다(ady ≥ 폭 + 발밑).
+          next = Math.min(next, Math.max(adx, ady - foot));
+        }
+      }
+      next = Math.max(52, Math.floor(Math.min(next, rect.height - foot)));
+      if (next === uw) break;
+      uw = next;
+    }
+    const spots = spotsFor(uw);
     const compact = uw < 86;
 
     run.ring.forEach((u, i) => {
@@ -231,21 +267,68 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       node.dataset.drop = 'unit';
       node.dataset.index = i;
       stage.appendChild(node);
-      // 발밑을 링 좌표에 맞춘다
+      // 발밑을 링 좌표에 맞추되, 무대 밖으로 나가면 안쪽으로 당긴다
       const bodyH = node.querySelector('.unit-body')?.offsetHeight || node.offsetHeight * 0.66;
-      node.style.left = `${x - node.offsetWidth / 2}px`;
-      node.style.top = `${y - bodyH}px`;
+      const w = node.offsetWidth;
+      const h = node.offsetHeight;
+      const left = Math.max(0, Math.min(x - w / 2, rect.width - w));
+      const top = Math.max(0, Math.min(y - bodyH, rect.height - h));
+      node.style.left = `${left}px`;
+      node.style.top = `${top}px`;
       // 위쪽 유닛이 아래쪽 유닛에 가리지 않도록 y 순서로 쌓는다
       node.style.zIndex = String(10 + Math.round(y));
+    });
+
+    // 다음 배치를 위해 실제 발밑 정보 높이를 기억한다 (전체 높이 − 그림 높이)
+    const probe = stage.querySelector('.ring-unit');
+    const probeBody = probe?.querySelector('.unit-body');
+    if (probe && probeBody) {
+      const measured = probe.offsetHeight - probeBody.offsetHeight;
+      if (measured > 0 && Math.abs(measured - ringFootH) > 1) {
+        ringFootH = measured;
+        // 추정값으로 배치했다면 실측값으로 한 번 더 정확히 배치한다
+        if (!ringSettled) { ringSettled = true; layoutRing(); }
+      }
+    }
+    ringSettled = true;
+  }
+
+  // 상점 진열 — 제안 수가 3~5로 변하므로 칸 너비를 실제 컨테이너에서 역산한다.
+  // 고정 폭이면 5칸일 때 마지막 몬스터가 잘려서 아예 보이지 않는다.
+  function layoutShopUnits() {
+    const wrap = qs('#shopUnits', root);
+    if (!wrap) return;
+    const peds = [...wrap.querySelectorAll('.pedestal')];
+    if (!peds.length) return;
+    const cs = getComputedStyle(wrap);
+    const gap = parseFloat(cs.columnGap || cs.gap) || 0;
+    const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    // 소수점 gap·테두리가 반올림되며 마지막 칸이 잘리는 것을 막기 위해 여유를 둔다
+    const avail = wrap.clientWidth - padX - Math.ceil(gap) * (peds.length - 1) - 6;
+    if (avail <= 0) return;
+    // 가로 스크롤이 가능한 좁은 화면에서는 억지로 줄이지 않고 스크롤에 맡긴다.
+    const scrolls = /auto|scroll/.test(cs.overflowX);
+    const fit = avail / peds.length;
+    // 세로로도 잘리지 않도록 높이에서 나오는 상한을 함께 건다 (스탠드 = 그림 + 발밑 정보)
+    const byHeight = wrap.clientHeight > 0 ? (wrap.clientHeight - 46) / 1.12 : Infinity;
+    const uw = Math.max(56, Math.floor(Math.min(scrolls ? Math.max(fit, 108) : fit, 176, byHeight)));
+    const compact = uw < 104;
+    peds.forEach((p) => {
+      p.style.width = `${uw}px`;
+      p.style.minWidth = `${uw}px`;
+      p.style.setProperty('--unit-w-shop', `${uw}px`);
+      p.classList.toggle('tiny-ped', compact);
     });
   }
 
   function rerender() {
     root.innerHTML = html();
     bind();
+    ringSettled = false;
     layoutRing();
+    layoutShopUnits();
     // 첫 배치에서 측정한 실제 유닛 크기로 한 번 더 정확히 배치한다
-    requestAnimationFrame(layoutRing);
+    requestAnimationFrame(() => { layoutRing(); layoutShopUnits(); });
     saveRun(run);
   }
 
@@ -532,7 +615,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
     });
   }
 
-  const onResize = () => layoutRing();
+  const onResize = () => { ringSettled = false; layoutRing(); layoutShopUnits(); };
   window.addEventListener('resize', onResize);
 
   rerender();
