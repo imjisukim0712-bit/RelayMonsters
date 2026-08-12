@@ -1,6 +1,8 @@
-// 프리셋 봇 덱 (기획서 11.3) — 18라운드 × 3종 = 54개
+// 프리셋 봇 덱 (기획서 11.3) — 18라운드 × 5종 = 90개
 // 서버 없이 검증하기 위한 폴백 상대. 고정 시드에서 결정론적으로 생성하므로
-// 같은 라운드·같은 변형은 항상 동일한 덱이 된다.
+// 같은 라운드·같은 변형은 항상 동일한 덱이 된다. 라운드마다 최소 5개의
+// 서로 다른 이름·전략의 AI 팀을 제공해, 실제 상대 스냅샷이 부족할 때도
+// 자동으로 다양한 상대와 매칭된다.
 
 import { makeRng } from '../engine/rng.js';
 import { SPECIES_LIST, speciesById } from './species.js';
@@ -18,6 +20,14 @@ export const BOT_VARIANTS = [
   {
     key: 'guard', name: '수비 릴레이',
     triggers: ['ON_DAMAGED', 'ON_BATTLE_START', 'ON_ITEM_USE', 'ON_SELL'],
+  },
+  {
+    key: 'berserk', name: '광란 릴레이',
+    triggers: ['ON_KILL', 'ON_DEATH', 'ON_ALLY_DEATH'],
+  },
+  {
+    key: 'tactic', name: '전술 릴레이',
+    triggers: ['ON_BEFORE_ATTACK', 'ON_ITEM_USE', 'ON_SELL'],
   },
 ];
 
@@ -121,9 +131,9 @@ export function presetBot(round, variantIdx) {
   };
 }
 
-// 라운드별 3종 전부
+// 라운드별 전체 변형 (최소 5종)
 export function presetBotsForRound(round) {
-  return [0, 1, 2].map((v) => presetBot(round, v));
+  return BOT_VARIANTS.map((_, v) => presetBot(round, v));
 }
 
 // 스냅샷 → 전투용 링

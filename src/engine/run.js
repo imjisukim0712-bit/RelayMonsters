@@ -1,7 +1,7 @@
 // 런 진행 · 라운드 · 생명 (기획서 9장)
 
 import { rollShop, baseGoldForRound, shopTierFor } from './shop.js';
-import { presetBot } from '../data/bots.js';
+import { presetBot, BOT_VARIANTS } from '../data/bots.js';
 import { ringFromSnapshot } from '../data/bots.js';
 import { fetchOpponent, uploadSnapshot, makeSnapshot } from '../storage/backend.js';
 import { addCoins, getMeta, updateMeta, saveRun, clearRun, markSpeciesSeen } from '../storage/save.js';
@@ -62,7 +62,7 @@ export async function prepareOpponent(run) {
       source: 'snapshot',
     };
   }
-  const variant = Math.floor(Math.random() * 3);
+  const variant = Math.floor(Math.random() * BOT_VARIANTS.length);
   const bot = presetBot(run.round, variant);
   return { ring: bot.ring, label: `프리셋 봇 · ${bot.name}`, teamName: bot.name, source: 'bot' };
 }
