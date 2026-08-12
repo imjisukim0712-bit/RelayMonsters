@@ -68,12 +68,48 @@ jobs:
         run: npx wrangler deploy | tee deploy.log
 
       - name: Report deployed URL
+        id: report
         run: |
-          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev[a-zA-Z0-9./_-]*' deploy.log | head -1)
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy.log | head -1)
           if [ -z "$URL" ]; then
-            echo "::warning::배포 로그에서 URL을 찾지 못했습니다. deploy.log 를 확인하세요."
-          else
-            echo "배포 완료: $URL"
-            echo "### 배포 주소" >> "$GITHUB_STEP_SUMMARY"
-            echo "$URL" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::배포 로그에서 URL을 찾지 못했습니다. deploy.log 를 확인하세요."
+            exit 1
           fi
+          echo "배포 완료: $URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### 배포 주소" >> "$GITHUB_STEP_SUMMARY"
+          echo "$URL" >> "$GITHUB_STEP_SUMMARY"
+
+      # 이 러너는 실제 인터넷에 붙어 있으므로, 배포된 Worker 를 즉시 실제로 호출해
+      # 헬스체크와 업로드→조회 라운드 트립까지 검증한다 (샌드박스 egress 정책으로는 못 함).
+      - name: Smoke test the deployed Worker
+        run: |
+          set -e
+          URL="${{ steps.report.outputs.url }}"
+          echo "-- health --"
+          curl -sf "$URL/health" | tee health.json
+          echo
+          echo "-- upload --"
+          SNAP_ID="s_ci_smoke_$(date +%s)"
+          curl -sf -X POST "$URL/api/snapshots" \
+            -H "Content-Type: application/json" -H "X-Owner-Id: ci-smoke-test" \
+            -d "{\"snapshotId\":\"$SNAP_ID\",\"round\":1,\"wins\":1,\"lives\":3,\"ring\":[{\"speciesId\":\"T1-01\",\"exp\":1}]}" \
+            | tee upload.json
+          echo
+          echo "-- fetch (다른 owner 로 조회, 방금 올린 스냅샷이 보여야 함) --"
+          curl -sf "$URL/api/snapshots?round=1" -H "X-Owner-Id: someone-else" | tee fetch.json
+          echo
+          node -e "
+            const fs = require('fs');
+            const health = JSON.parse(fs.readFileSync('health.json', 'utf8'));
+            if (!health.ok) throw new Error('health check failed: ' + JSON.stringify(health));
+            const upload = JSON.parse(fs.readFileSync('upload.json', 'utf8'));
+            if (!upload.ok) throw new Error('upload failed: ' + JSON.stringify(upload));
+            const fetched = JSON.parse(fs.readFileSync('fetch.json', 'utf8'));
+            if (!Array.isArray(fetched) || !fetched.some((s) => s.snapshotId === '$SNAP_ID')) {
+              throw new Error('업로드한 스냅샷을 조회 결과에서 찾지 못했습니다: ' + JSON.stringify(fetched));
+            }
+            console.log('스모크 테스트 통과 — 업로드/조회 라운드 트립 확인됨');
+          "
+          echo "### 스모크 테스트" >> "$GITHUB_STEP_SUMMARY"
+          echo "헬스체크·업로드·조회 라운드 트립 통과" >> "$GITHUB_STEP_SUMMARY"

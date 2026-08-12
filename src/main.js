@@ -14,8 +14,8 @@ import { loadSave } from './storage/save.js';
 //
 // 옵션 B) Cloudflare (Worker + D1) — server/ 를 배포하고 cloudflareBackend.js 의
 // WORKER_URL 을 배포된 주소로 바꾼 뒤:
-// import { enableCloudflareBackend } from './storage/cloudflareBackend.js';
-// await enableCloudflareBackend().catch((e) => console.warn('Cloudflare 미연결 — 로컬 모드', e));
+import { enableCloudflareBackend } from './storage/cloudflareBackend.js';
+await enableCloudflareBackend().catch((e) => console.warn('Cloudflare 미연결 — 로컬 모드', e));
 
 function boot() {
   loadSave();

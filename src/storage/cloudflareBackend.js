@@ -15,7 +15,7 @@
 
 import { configureBackend } from './backend.js';
 
-export const WORKER_URL = 'http://localhost:8787';
+export const WORKER_URL = 'https://relaymonsters-backend.imjisukim0712.workers.dev';
 
 const OWNER_KEY = 'relaymonsters.ownerId';
 function ownerId() {
