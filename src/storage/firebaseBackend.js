@@ -75,10 +75,15 @@ export async function createFirebaseBackend() {
         fs.limit(FETCH_LIMIT),
       );
       const snap = await fs.getDocs(q);
+      const myUid = auth.currentUser?.uid || null;
       const out = [];
-      snap.forEach((d) => out.push({ snapshotId: d.id, ...d.data() }));
-      // 자기 자신이 올린 스냅샷은 상대로 쓰지 않는다
-      return out.filter((s) => !auth.currentUser || s.ownerUid !== auth.currentUser.uid);
+      // 자기 자신 것도 그대로 포함한다 — "내 것" 표시(mine)만 남기고,
+      // 자기 자신·AI 매칭 확률 계산은 backend.js 의 fetchOpponent 가 담당한다.
+      snap.forEach((d) => {
+        const data = d.data();
+        out.push({ snapshotId: d.id, ...data, mine: !!myUid && data.ownerUid === myUid });
+      });
+      return out;
     },
   };
 }

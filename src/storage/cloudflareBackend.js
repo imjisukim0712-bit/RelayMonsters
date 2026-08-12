@@ -11,7 +11,8 @@
 //   3) 아래 WORKER_URL 을 그 주소로 바꾸고, main.js 에서 이 어댑터를 활성화한다.
 //
 // 인증은 없다(프로토타입). ownerId 는 브라우저가 생성해 localStorage 에 보관하는
-// 익명 식별자로, 자기 자신이 올린 스냅샷을 상대 후보에서 빼는 데만 쓰인다.
+// 익명 식별자로, 조회 결과 중 어떤 것이 "내 것"인지 표시하는 데 쓰인다. 자기 자신·AI
+// 매칭 확률 계산은 backend.js 의 fetchOpponent 가 이 표시(mine)를 보고 담당한다.
 
 import { configureBackend } from './backend.js';
 
@@ -50,14 +51,16 @@ export function createCloudflareBackend(baseUrl = WORKER_URL) {
     },
 
     async fetchSnapshots({ round }) {
+      const myId = ownerId();
       const res = await fetch(`${baseUrl}/api/snapshots?round=${round}`, {
-        headers: { 'X-Owner-Id': ownerId() },
+        headers: { 'X-Owner-Id': myId },
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(`조회 실패 (${res.status}): ${body.error || res.statusText}`);
       }
-      return res.json();
+      const rows = await res.json();
+      return rows.map(({ ownerId: rowOwner, ...rest }) => ({ ...rest, mine: rowOwner === myId }));
     },
   };
 }

@@ -44,7 +44,8 @@ const localAdapter = {
   },
   async fetchSnapshots({ round }) {
     const meta = getMeta();
-    return (meta.mySnapshots || []).filter((s) => s.round === round);
+    // 로컬 저장소는 이 브라우저의 과거 플레이 기록뿐이라 전부 "내 것"이다.
+    return (meta.mySnapshots || []).filter((s) => s.round === round).map((s) => ({ ...s, mine: true }));
   },
 };
 
@@ -67,12 +68,24 @@ export async function uploadSnapshot(snapshot) {
   }
 }
 
-// 매칭 규칙 (기획서 11.2)
-//  1. 동일 라운드 번호의 스냅샷 풀에서 추출
-//  2. 승수 차이 ±1 을 우선
-//  3. 조건에 맞는 스냅샷이 5건 미만이면 프리셋 봇으로 폴백 (호출 측에서 처리)
-//  4. 같은 게임 내에서 동일 스냅샷과 두 번 매칭되지 않는다
-export const MIN_POOL = 5;
+// 매칭 규칙 (기획서 11.2 개정 — 문턱 대신 확률로 대체)
+//  1. 동일 라운드 번호의 스냅샷 풀에서 추출하고, 나 자신의 스냅샷과 다른 플레이어의
+//     스냅샷을 분리한다 (각 어댑터가 mine 플래그로 표시한다).
+//  2. 다른 플레이어의 웨이브 데이터가 OTHER_POOL_TARGET(10)건 이상이면 항상 그중에서
+//     매칭한다 — 이 이상에서는 AI(프리셋 봇)와도, 나 자신과도 매칭되지 않는다.
+//  3. 그보다 적으면 데이터가 적을수록(0건에 가까울수록) 나 자신 또는 프리셋 봇과
+//     매칭될 확률이 커진다. 다른 플레이어와 매칭될 확률은 (건수 / 10) 이다.
+//  4. 그 나머지 확률 안에서는, 내가 과거에 올린 스냅샷이 있으면 절반은 나 자신과,
+//     없거나 나머지 절반은 프리셋 봇으로 폴백한다 (호출 측에서 처리).
+//  5. 승수 차이 ±1 을 우선해서 고른다.
+//  6. 같은 게임 내에서 동일 스냅샷과 두 번 매칭되지 않는다.
+export const OTHER_POOL_TARGET = 10;
+
+function pickNear(list, wins, round) {
+  const near = list.filter((s) => Math.abs((s.wins ?? round) - wins) <= 1);
+  const from = near.length ? near : list;
+  return from[Math.floor(Math.random() * from.length)];
+}
 
 export async function fetchOpponent({ round, wins, seen = [] }) {
   let pool = [];
@@ -83,9 +96,16 @@ export async function fetchOpponent({ round, wins, seen = [] }) {
     return null;
   }
   const unseen = pool.filter((s) => !seen.includes(s.snapshotId));
-  if (unseen.length < MIN_POOL) return null; // 폴백
+  const others = unseen.filter((s) => !s.mine);
+  const mine = unseen.filter((s) => s.mine);
 
-  const near = unseen.filter((s) => Math.abs((s.wins ?? round) - wins) <= 1);
-  const from = near.length ? near : unseen;
-  return from[Math.floor(Math.random() * from.length)];
+  const pOther = Math.min(1, others.length / OTHER_POOL_TARGET);
+  if (others.length && Math.random() < pOther) {
+    return pickNear(others, wins, round);
+  }
+  // 다른 플레이어 매칭에 실패한 나머지 확률 — 내 과거 데이터가 있으면 절반은 나 자신과 매칭한다.
+  if (mine.length && Math.random() < 0.5) {
+    return pickNear(mine, wins, round);
+  }
+  return null; // 프리셋 봇으로 폴백
 }

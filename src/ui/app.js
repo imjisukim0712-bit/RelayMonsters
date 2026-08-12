@@ -94,17 +94,12 @@ export function startApp(root) {
         ? `생명 ${run.lives} → ${run.lives - 1} · 같은 라운드 재도전`
         : '생명 소모 없이 같은 라운드 재도전';
 
-    const m = modal(`<div class="result-card result-${result}">
-      <div class="result-title">${label}</div>
-      <div class="result-sub">${battle.turns}턴 · ${escapeHtml(opponent.label)}</div>
-      <p class="result-detail">${detail}</p>
-      <div class="result-log">${battle.logs.slice(-6).map((l) => `<div>${l}</div>`).join('')}</div>
-      <button class="btn big primary" data-act="next">계속</button>
-    </div>`, { wide: true });
-
-    m.box.addEventListener('click', async (e) => {
-      if (!e.target.closest('[data-act="next"]')) return;
-      m.close();
+    // 전투 결과 확인은 항상 다음 웨이브로 이어져야 하므로, 바깥 클릭·ESC·✕ 로 닫아도
+    // "계속"을 누른 것과 동일하게 처리한다 — 그냥 닫히고 멈춰버리는 문제를 막는다.
+    let advanced = false;
+    const advance = async () => {
+      if (advanced) return;
+      advanced = true;
       const next = await applyBattleResult(run, result);
       if (next === 'clear' || next === 'over') {
         const finished = run;
@@ -113,6 +108,19 @@ export function startApp(root) {
       } else {
         goShop();
       }
+    };
+
+    const m = modal(`<div class="result-card result-${result}">
+      <div class="result-title">${label}</div>
+      <div class="result-sub">${battle.turns}턴 · ${escapeHtml(opponent.label)}</div>
+      <p class="result-detail">${detail}</p>
+      <div class="result-log">${battle.logs.slice(-6).map((l) => `<div>${l}</div>`).join('')}</div>
+      <button class="btn big primary" data-act="next">계속</button>
+    </div>`, { wide: true, onClose: advance });
+
+    m.box.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-act="next"]')) return;
+      m.close();
     });
   }
 
