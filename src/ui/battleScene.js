@@ -27,16 +27,20 @@ export function playBattle(root, {
   root.innerHTML = `
   <div class="scene battle-scene">
     <header class="hud">
-      <div class="hud-left">
-        <span class="hud-team hud-team-ally" title="아군 팀">${escapeHtml(allyTeamName || '내 팀')}</span>
-        <span class="hud-round">R${run.round}<i>/18</i></span>
-        <span class="hud-lives" title="생명">${lifeIcons(run.lives)}</span>
-        <span class="hud-turn">턴 <b id="turnNum">0</b><i>/${MAX_TURNS}</i></span>
+      <div class="hud-top">
+        <div class="hud-left">
+          <span class="hud-round">R${run.round}<i>/18</i></span>
+          <span class="hud-lives" title="생명">${lifeIcons(run.lives)}</span>
+          <span class="hud-turn">턴 <b id="turnNum">0</b><i>/${MAX_TURNS}</i></span>
+        </div>
+        <div class="hud-right">
+          <button class="btn tiny" id="speedBtn" title="배속">1×</button>
+          <button class="btn tiny ghost" id="skipBtn" title="전투 건너뛰기">건너뛰기</button>
+        </div>
       </div>
-      <div class="hud-right">
+      <div class="hud-teams">
+        <span class="hud-team hud-team-ally" title="아군 팀">${escapeHtml(allyTeamName || '내 팀')}</span>
         <span class="hud-team hud-team-enemy" title="적군 팀">${escapeHtml(enemyTeamName || '상대 팀')}</span>
-        <button class="btn tiny" id="speedBtn" title="배속">1×</button>
-        <button class="btn tiny ghost" id="skipBtn" title="전투 건너뛰기">건너뛰기</button>
       </div>
     </header>
 
@@ -56,6 +60,7 @@ export function playBattle(root, {
   </div>`;
 
   const stage = root.querySelector('#stage');
+  const hudEl = root.querySelector('.hud');
   const rings = [root.querySelector('#ringAlly'), root.querySelector('#ringEnemy')];
   const fxLayer = root.querySelector('#fxLayer');
   const logBox = root.querySelector('#battleLog');
@@ -72,28 +77,43 @@ export function playBattle(root, {
   // ── 링 좌표 ─────────────────────────────────────────────────────
   // 가로 화면: 두 링을 좌우로 마주 세운다 (아군 전선 = 오른쪽, 적 전선 = 왼쪽)
   // 세로 화면: 두 링을 위아래로 마주 세운다 (아군 전선 = 위, 적 전선 = 아래)
-  let geo = { w: 0, h: 0, radius: 0, centers: [], frontAngle: [0, 180], squash: 0.9, maxUw: 150 };
+  let geo = { w: 0, h: 0, radius: 0, centers: [], frontAngle: [0, 180], squash: 0.9, maxUw: 132 };
   function measure() {
     const r = stage.getBoundingClientRect();
     geo.w = r.width;
     geo.h = r.height;
+    // 유닛이 HUD(팀 이름 줄이 추가되어 예전보다 높다) 뒤로 가려지거나 그 위를 덮지 않도록,
+    // 실제로 렌더링된 HUD 높이만큼 여백을 두고 링을 그 아래로 밀어낸다.
+    const hudRect = hudEl?.getBoundingClientRect();
+    const topSafe = (hudRect ? Math.max(0, hudRect.bottom - r.top) : 0) + 12;
     const portrait = r.width / Math.max(1, r.height) < 1.25;
     if (portrait) {
-      geo.radius = Math.max(44, Math.min(r.width * 0.30, r.height * 0.17));
-      geo.centers = [
-        { x: r.width * 0.5, y: r.height * 0.755 },
-        { x: r.width * 0.5, y: r.height * 0.245 },
-      ];
-      geo.frontAngle = [-90, 90];
+      geo.maxUw = 88;
       geo.squash = 0.66;
-      geo.maxUw = 96;
+      geo.frontAngle = [-90, 90];
+      geo.radius = Math.max(38, Math.min(r.width * 0.27, r.height * 0.15));
+      const headroom = geo.maxUw * 1.25; // 유닛 실루엣이 중심점보다 위로 자라는 여유
+      const bottomY = r.height * 0.76;
+      const topY = Math.min(Math.max(topSafe + headroom, r.height * 0.24), bottomY - geo.radius * 2);
+      geo.centers = [
+        { x: r.width * 0.5, y: bottomY },
+        { x: r.width * 0.5, y: topY },
+      ];
     } else {
-      geo.radius = Math.max(52, Math.min(r.height * 0.235, r.width * 0.145));
-      const cy = r.height * 0.58;
-      geo.centers = [{ x: r.width * 0.245, y: cy }, { x: r.width * 0.755, y: cy }];
-      geo.frontAngle = [0, 180];
+      geo.maxUw = 132;
       geo.squash = 0.9;
-      geo.maxUw = 150;
+      geo.frontAngle = [0, 180];
+      const bodyAllow = geo.maxUw; // 유닛 실루엣이 중심점보다 위로 자라는 여유
+      const footAllow = 40; // 발밑 이름·칩 표시 여유
+      const bottomLimit = r.height - footAllow;
+      // 화면이 낮을 때는 링 자체를 줄여서라도 위(HUD)·아래(전투 로그) 모두와 겹치지 않게 한다.
+      const bandRadius = Math.max(0, bottomLimit - topSafe - bodyAllow) / geo.squash;
+      geo.radius = Math.max(38, Math.min(r.height * 0.21, r.width * 0.13, bandRadius));
+      const cy = Math.min(
+        Math.max(r.height * 0.58, topSafe + bodyAllow + geo.radius * geo.squash),
+        bottomLimit - geo.radius * geo.squash,
+      );
+      geo.centers = [{ x: r.width * 0.245, y: cy }, { x: r.width * 0.755, y: cy }];
     }
     const marker = root.querySelector('#frontMarker');
     if (marker) {

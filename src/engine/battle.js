@@ -605,6 +605,13 @@ function doRotation(state) {
     if (!team.units.length) { info.push({ teamIdx, dir: 0, moved: false, steps: 0 }); continue; }
     for (const u of team.units) u.usedRotation = {};
 
+    if (team.units.length <= 1) {
+      // 유닛이 하나만 남으면 돌 자리가 없다 — 회전 기믹을 발동하지 않고 자리 유지로 취급한다.
+      team.rotationConsumed = false;
+      info.push({ teamIdx, dir: 0, moved: false, steps: 0 });
+      continue;
+    }
+
     if (team.rotationConsumed) {
       // 압축 승계로 이미 다음 유닛이 전선에 섰다. 위치는 그대로 두고 트리거만 진행한다.
       team.rotationConsumed = false;
@@ -617,7 +624,11 @@ function doRotation(state) {
 
   emit(state, 'rotate', { info });
 
-  fireAll(state, 'ON_ROTATE', () => ({}));
+  // 회전이 없었던 팀(유닛 하나만 남은 팀)의 유닛에는 회전 트리거가 발동하지 않는다.
+  for (const u of orderedUnits(state)) {
+    if (!u.alive || state.teams[u.team].units.length <= 1) continue;
+    fireOn(state, u, 'ON_ROTATE', {});
+  }
 
   // 한 바퀴 — 링 칸 수만큼 회전해 완주했을 때
   for (const teamIdx of [0, 1]) {
