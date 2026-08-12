@@ -926,7 +926,7 @@ html, body {
 .shop-units { flex-wrap: nowrap; overflow-x: auto; gap: 8px; }
 .pedestal {
   width: clamp(118px, 9.5vw, 155px);
-  min-width: clamp(118px, 9.5vw, 155px);
+  min-width: 0;
   padding: 7px 7px 9px;
   border: 3px solid #25314A;
   border-radius: 17px;
@@ -970,12 +970,16 @@ html, body {
 .battle-scene .hud {
   position: absolute; left: 0; right: 0; top: 0; z-index: 30;
   background: linear-gradient(rgba(23,31,48,.62), transparent);
-  flex-direction: column; align-items: stretch; gap: 6px;
-}
-.battle-scene .hud-top, .battle-scene .hud-teams {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap;
 }
 .battle-scene .hud-round, .battle-scene .hud-lives, .battle-scene .hud-turn { min-height: 45px; }
+/* 팀 이름은 상단 HUD(라운드·생명·턴·배속·건너뛰기) 바로 아래, 별도의 줄에 둔다.
+   top 은 hud 의 실측 높이에 맞춰 JS(measure())가 지정한다 — hud 높이가 화면 폭/배속
+   버튼 줄바꿈 등에 따라 달라지므로 고정값을 쓰면 겹치거나 틈이 생긴다. */
+.battle-scene .team-bar {
+  position: absolute; left: 0; right: 0; z-index: 29;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 0 clamp(14px, 2vw, 30px) 8px;
+}
 .battle-scene .hud-vs { background: rgba(255,248,232,.88); color: var(--ink); }
 .battle-scene .stage { border: 0; }
 .battle-scene .bg-svg { filter: saturate(.94) contrast(.97); }
@@ -1259,9 +1263,10 @@ html, body {
 }
 
 /* Shop monsters are freestanding figures on solid ground pads, never cards. */
+/* 폭·최소폭은 진열 칸 수에 맞춰 layoutShopUnits() 가 직접 지정한다 (전부 보이게) */
 .pedestal {
   width: clamp(122px, 9.5vw, 154px);
-  min-width: clamp(122px, 9.5vw, 154px);
+  min-width: 0;
   padding: 0 4px 3px;
   overflow: visible;
   border: 0;
@@ -1321,6 +1326,22 @@ html, body {
   color: var(--out);
   text-shadow: none;
 }
+/* 칸이 좁아지면 가격 배지·이름·스탯을 함께 줄여 몬스터 그림을 가리지 않게 한다 */
+.pedestal.tiny-ped .ped-price {
+  width: 30px; height: 30px; right: 0; top: 0; border-width: 2px;
+}
+.pedestal.tiny-ped .ped-price b { font-size: 12px; }
+.pedestal.tiny-ped .ped-name { font-size: 11px; padding: 1px 5px; }
+.pedestal.tiny-ped .chips { gap: 2px; }
+.shop-units .pedestal.tiny-ped .chip-atk,
+.shop-units .pedestal.tiny-ped .chip-hp {
+  width: 38px; min-width: 38px; height: 37px;
+}
+.shop-units .pedestal.tiny-ped .chip-atk .v,
+.shop-units .pedestal.tiny-ped .chip-hp .v { font-size: 15px; }
+.shop-units .pedestal.tiny-ped .chip-atk .ico { left: -9px; top: -8px; width: 22px; height: 22px; }
+.shop-units .pedestal.tiny-ped .chip-hp .ico { inset: -4px -5px -5px; width: 47px; height: 47px; }
+
 .shop-side { min-width: 0; gap: 7px; }
 .sell-zone {
   min-height: 58px;
@@ -1762,10 +1783,8 @@ html, body {
     justify-content: space-around;
     overflow: hidden;
   }
-  .pedestal {
-    width: clamp(135px, 10vw, 198px);
-    min-width: clamp(135px, 10vw, 198px);
-  }
+  /* 폭은 layoutShopUnits() 가 칸 수에 맞춰 지정한다 — 여기서 고정하면 마지막 칸이 잘린다 */
+  .pedestal { min-width: 0; }
   .shop-side {
     position: absolute;
     left: 72%;
