@@ -30,6 +30,7 @@ export function newRun() {
     status: 'shop',
     lastResult: null,
     opponentLabel: '',
+    teamName: getMeta().teamName || '이름 없는 팀',
   };
   enterShop(run, { fresh: true });
   return run;
@@ -53,15 +54,17 @@ export async function prepareOpponent(run) {
   const snap = await fetchOpponent({ round: run.round, wins: run.wins, seen: run.seenSnapshots });
   if (snap) {
     run.seenSnapshots.push(snap.snapshotId);
+    const teamName = snap.teamName || '익명의 팀';
     return {
       ring: ringFromSnapshot(snap),
-      label: `플레이어 스냅샷 · R${snap.round} (${snap.wins}승)`,
+      label: `${teamName} · R${snap.round} (${snap.wins}승)`,
+      teamName,
       source: 'snapshot',
     };
   }
   const variant = Math.floor(Math.random() * 3);
   const bot = presetBot(run.round, variant);
-  return { ring: bot.ring, label: `프리셋 봇 · ${bot.name}`, source: 'bot' };
+  return { ring: bot.ring, label: `프리셋 봇 · ${bot.name}`, teamName: bot.name, source: 'bot' };
 }
 
 export function battleOptions(run) {
@@ -77,7 +80,9 @@ export async function applyBattleResult(run, result) {
     run.wins += 1;
     // 승리한 링을 스냅샷으로 남긴다 (비동기 멀티 업로드 단위)
     try {
-      const snap = makeSnapshot({ round: run.round, wins: run.wins, lives: run.lives, ring: run.ring });
+      const snap = makeSnapshot({
+        round: run.round, wins: run.wins, lives: run.lives, ring: run.ring, teamName: run.teamName,
+      });
       await uploadSnapshot(snap);
     } catch (e) {
       console.warn('스냅샷 업로드를 건너뜁니다.', e);

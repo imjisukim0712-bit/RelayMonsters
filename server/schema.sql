@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
   wins       INTEGER NOT NULL,
   lives      INTEGER NOT NULL,
   ring_json  TEXT NOT NULL,
+  team_name  TEXT,
   owner_id   TEXT,
   created_at TEXT NOT NULL
 );

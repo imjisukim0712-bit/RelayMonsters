@@ -85,4 +85,11 @@ export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// innerHTML 로 삽입되는 사용자 입력(팀 이름 등)을 안전하게 만든다.
+export function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
 export const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;

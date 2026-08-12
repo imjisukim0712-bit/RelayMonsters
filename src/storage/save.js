@@ -16,6 +16,7 @@ function defaultMeta() {
     mySnapshots: [],
     totalRuns: 0,
     seenSpecies: [],
+    teamName: '',
   };
 }
 

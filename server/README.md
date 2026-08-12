@@ -67,11 +67,17 @@ CREATE TABLE snapshots (
   wins INTEGER NOT NULL,
   lives INTEGER NOT NULL,
   ring_json TEXT NOT NULL,
+  team_name TEXT,
   owner_id TEXT,
   created_at TEXT NOT NULL
 );
 CREATE INDEX idx_snapshots_round ON snapshots(round, created_at DESC);
 ```
+
+`team_name` 은 배포 워크플로가 기존 원격 DB에도 `ALTER TABLE ... ADD COLUMN` 으로
+자동 추가한다(이미 있으면 건너뜀). 로컬 DB를 이 컬럼 추가 이전에 만들었다면
+`npx wrangler d1 execute relaymonsters-db --local --command="ALTER TABLE snapshots ADD COLUMN team_name TEXT"`
+를 한 번 실행하거나 `.wrangler/state` 를 지우고 `db:init:local` 을 다시 실행한다.
 
 ## 검증 이력
 

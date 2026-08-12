@@ -6,7 +6,8 @@ import { backgroundSvg } from '../art/backgrounds.js';
 import { sprite } from './unitView.js';
 import { TOTAL_ROUNDS } from '../engine/run.js';
 import { SPECIES_LIST, speciesById } from '../data/species.js';
-import { backendName } from '../storage/backend.js';
+import { backendName, MAX_TEAM_NAME } from '../storage/backend.js';
+import { modal, escapeHtml } from './dom.js';
 
 const SHOWCASE = ['dragonrider', 'phoenix', 'kraken', 'minotaur', 'unicorn'];
 
@@ -36,6 +37,7 @@ export function renderLobby(root, { hasRun, onContinue, onNewRun, onBgShop, onCo
       </div>
 
       <div class="meta-bar">
+        ${meta.teamName ? `<span class="meta-item">팀 이름 <b>${escapeHtml(meta.teamName)}</b></span>` : ''}
         <span class="meta-item"><b>${meta.coins}</b> 코인</span>
         <span class="meta-item">최고 라운드 <b>${meta.bestRound}</b>/${TOTAL_ROUNDS}</span>
         <span class="meta-item">클리어 <b>${meta.clears}</b></span>
@@ -76,4 +78,44 @@ export function renderRunEnd(root, { run, cleared, onBack }) {
     </div>
   </div>`;
   root.querySelector('#backBtn').addEventListener('click', onBack);
+}
+
+// 새 게임 시작 전 팀 이름 입력 — 상대에게 공개되는 이름이라 매 런 시작 시 확인한다.
+export function promptTeamName(defaultName = '') {
+  return new Promise((resolve) => {
+    let decided = false;
+    const finish = (v) => { if (!decided) { decided = true; resolve(v); } };
+
+    const m = modal(`<div class="team-name-prompt">
+      <h3>팀 이름을 정해주세요</h3>
+      <p class="hint">전투 화면과 상대 플레이어에게 공개되는 이름입니다.</p>
+      <input type="text" id="teamNameInput" maxlength="${MAX_TEAM_NAME}"
+        placeholder="예: 새벽의 릴레이" value="${escapeHtml(defaultName)}" autocomplete="off" />
+      <div class="confirm-actions">
+        <button class="btn ghost" data-act="cancel">취소</button>
+        <button class="btn primary" data-act="ok">시작</button>
+      </div>
+    </div>`, { onClose: () => finish(null) });
+
+    const input = m.box.querySelector('#teamNameInput');
+    input.focus();
+    input.select();
+
+    const submit = () => {
+      const v = input.value.trim();
+      if (!v) { input.classList.add('invalid'); input.focus(); return; }
+      finish(v);
+      m.close();
+    };
+
+    m.box.addEventListener('click', (e) => {
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      if (!act) return;
+      if (act === 'ok') submit();
+      else { finish(null); m.close(); }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submit(); }
+    });
+  });
 }

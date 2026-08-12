@@ -4,7 +4,7 @@
 import { TIER_COLORS, TRIGGERS } from '../data/species.js';
 import { unitStand, ICONS } from './unitView.js';
 import { backgroundSvg } from '../art/backgrounds.js';
-import { prefersReducedMotion, sleep } from './dom.js';
+import { prefersReducedMotion, sleep, escapeHtml } from './dom.js';
 import { MAX_TURNS } from '../engine/battle.js';
 
 const BASE_ROTATE_MS = 420; // 기본 1칸 회전 시간 0.42초
@@ -16,7 +16,7 @@ const DELAYS = {
 };
 
 export function playBattle(root, {
-  run, battle, opponentLabel, backgroundId, onDone,
+  run, battle, allyTeamName, enemyTeamName, backgroundId, onDone,
 }) {
   const speeds = [1, 2, 4];
   let speedIdx = 0;
@@ -28,12 +28,13 @@ export function playBattle(root, {
   <div class="scene battle-scene">
     <header class="hud">
       <div class="hud-left">
+        <span class="hud-team hud-team-ally" title="아군 팀">${escapeHtml(allyTeamName || '내 팀')}</span>
         <span class="hud-round">R${run.round}<i>/18</i></span>
         <span class="hud-lives" title="생명">${lifeIcons(run.lives)}</span>
         <span class="hud-turn">턴 <b id="turnNum">0</b><i>/${MAX_TURNS}</i></span>
       </div>
       <div class="hud-right">
-        <span class="hud-vs" title="상대">${opponentLabel || ''}</span>
+        <span class="hud-team hud-team-enemy" title="적군 팀">${escapeHtml(enemyTeamName || '상대 팀')}</span>
         <button class="btn tiny" id="speedBtn" title="배속">1×</button>
         <button class="btn tiny ghost" id="skipBtn" title="전투 건너뛰기">건너뛰기</button>
       </div>

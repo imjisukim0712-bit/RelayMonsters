@@ -422,6 +422,16 @@ small { font-size: 14px; }
 .confirm p { font-size: 17px; margin: 4px 0 18px; }
 .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
+.team-name-prompt h3 { margin: 4px 0 6px; font-size: 20px; }
+.team-name-prompt .hint { font-size: 14px; color: var(--ink-2); margin: 0 0 14px; }
+.team-name-prompt input {
+  width: 100%; font-size: 17px; padding: 10px 14px;
+  border: 3px solid var(--out); border-radius: 12px;
+  background: var(--paper); color: var(--ink);
+}
+.team-name-prompt input.invalid { border-color: var(--hp); }
+.team-name-prompt .confirm-actions { margin-top: 16px; }
+
 #toasts {
   position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
   z-index: 900; display: flex; flex-direction: column; gap: 6px; align-items: center;
@@ -723,7 +733,7 @@ html, body {
 }
 .hud-swords { color: #758099; font-size: 24px; font-style: normal; }
 .hud-lives .life { width: 29px; height: 29px; filter: drop-shadow(0 2px 0 rgba(37,49,74,.18)); }
-.hud-band, .hud-tier, .hud-vs {
+.hud-band, .hud-tier, .hud-vs, .hud-team {
   background: rgba(255,248,232,.72);
   border: 2px solid rgba(37,49,74,.18);
   border-radius: 999px;
@@ -731,6 +741,15 @@ html, body {
   font-weight: 800;
   color: var(--ink-2);
 }
+.hud-team {
+  max-width: 30vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hud-team-ally { color: #2E7D46; }
+.hud-team-enemy { color: #C23B4B; }
+.battle-scene .hud-team { background: rgba(255,248,232,.88); }
 .icon-btn {
   width: 52px; height: 52px; border-radius: 15px;
   border: 3px solid var(--out); box-shadow: 0 4px 0 var(--out);

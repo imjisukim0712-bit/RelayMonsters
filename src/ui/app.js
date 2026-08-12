@@ -1,14 +1,14 @@
 // 씬 라우터
 
-import { renderLobby, renderRunEnd } from './lobby.js';
+import { renderLobby, renderRunEnd, promptTeamName } from './lobby.js';
 import { renderShop } from './shopScene.js';
 import { playBattle } from './battleScene.js';
 import { renderBgShop } from './bgShop.js';
 import { renderCodex, renderRules } from './codex.js';
-import { modal, toast, confirmDialog } from './dom.js';
+import { modal, toast, confirmDialog, escapeHtml } from './dom.js';
 import { newRun, prepareOpponent, battleOptions, applyBattleResult, TOTAL_ROUNDS } from '../engine/run.js';
 import { simulateBattle } from '../engine/battle.js';
-import { loadRun, saveRun, clearRun, getMeta } from '../storage/save.js';
+import { loadRun, saveRun, clearRun, getMeta, updateMeta } from '../storage/save.js';
 import { sprite } from './unitView.js';
 import { speciesById } from '../data/species.js';
 
@@ -33,6 +33,9 @@ export function startApp(root) {
           const ok = await confirmDialog('진행 중인 런이 삭제됩니다. 새 게임을 시작할까요?', { okText: '새 게임' });
           if (!ok) return;
         }
+        const teamName = await promptTeamName(getMeta().teamName || '');
+        if (!teamName) return;
+        updateMeta({ teamName });
         clearRun();
         run = newRun();
         saveRun(run);
@@ -76,7 +79,8 @@ export function startApp(root) {
     swap(() => playBattle(root, {
       run,
       battle,
-      opponentLabel: opponent.label,
+      allyTeamName: run.teamName,
+      enemyTeamName: opponent.teamName,
       backgroundId: meta.selectedBackground,
       onDone: (result) => showResult(result, battle, opponent),
     }));
@@ -92,7 +96,7 @@ export function startApp(root) {
 
     const m = modal(`<div class="result-card result-${result}">
       <div class="result-title">${label}</div>
-      <div class="result-sub">${battle.turns}턴 · ${opponent.label}</div>
+      <div class="result-sub">${battle.turns}턴 · ${escapeHtml(opponent.label)}</div>
       <p class="result-detail">${detail}</p>
       <div class="result-log">${battle.logs.slice(-6).map((l) => `<div>${l}</div>`).join('')}</div>
       <button class="btn big primary" data-act="next">계속</button>

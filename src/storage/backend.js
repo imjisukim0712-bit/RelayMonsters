@@ -9,13 +9,16 @@
 
 import { getMeta, updateMeta } from './save.js';
 
+export const MAX_TEAM_NAME = 20;
+
 // 스냅샷 JSON 포맷 (기획서 14.3) — 처음부터 서버 연동을 전제로 설계했다.
-export function makeSnapshot({ round, wins, lives, ring }) {
+export function makeSnapshot({ round, wins, lives, ring, teamName }) {
   return {
     snapshotId: `s_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`,
     round,
     wins,
     lives,
+    teamName: String(teamName || '').trim().slice(0, MAX_TEAM_NAME),
     createdAt: new Date().toISOString(),
     // 배열 인덱스 0 이 1번 슬롯(첫 등판)이며, 배열 순서가 곧 등판 순서다.
     ring: ring.map((u) => ({

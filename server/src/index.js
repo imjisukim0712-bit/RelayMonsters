@@ -10,6 +10,7 @@
 const FETCH_LIMIT = 40;
 const MAX_RING = 6;
 const MAX_ROUND = 18;
+const MAX_TEAM_NAME = 20;
 
 function cors(origin) {
   return {
@@ -45,6 +46,9 @@ function validateSnapshot(body) {
     if (!isPlainObject(u) || typeof u.speciesId !== 'string' || !u.speciesId) return 'ring 유닛 형식 오류';
     if (typeof u.exp !== 'number' || u.exp < 0 || u.exp > 999) return 'ring 유닛 exp 오류';
   }
+  if (body.teamName != null && (typeof body.teamName !== 'string' || body.teamName.length > MAX_TEAM_NAME)) {
+    return 'teamName 형식 오류';
+  }
   return null;
 }
 
@@ -59,13 +63,14 @@ async function handleUpload(request, env, origin) {
   if (err) return json({ error: err }, 400, origin);
 
   const ownerId = (request.headers.get('X-Owner-Id') || '').slice(0, 128) || null;
+  const teamName = (body.teamName || '').slice(0, MAX_TEAM_NAME) || null;
   const createdAt = new Date().toISOString();
 
   await env.DB.prepare(
-    `INSERT INTO snapshots (id, round, wins, lives, ring_json, owner_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO snapshots (id, round, wins, lives, ring_json, team_name, owner_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO NOTHING`,
-  ).bind(body.snapshotId, body.round, body.wins, body.lives, JSON.stringify(body.ring), ownerId, createdAt)
+  ).bind(body.snapshotId, body.round, body.wins, body.lives, JSON.stringify(body.ring), teamName, ownerId, createdAt)
     .run();
 
   return json({ ok: true, snapshotId: body.snapshotId }, 201, origin);
@@ -82,12 +87,12 @@ async function handleFetch(request, env, origin) {
   // 자기 자신이 올린 스냅샷은 상대 후보에서 제외한다
   const stmt = ownerId
     ? env.DB.prepare(
-      `SELECT id, round, wins, lives, ring_json, created_at FROM snapshots
+      `SELECT id, round, wins, lives, ring_json, team_name, created_at FROM snapshots
        WHERE round = ? AND (owner_id IS NULL OR owner_id != ?)
        ORDER BY created_at DESC LIMIT ?`,
     ).bind(round, ownerId, FETCH_LIMIT)
     : env.DB.prepare(
-      `SELECT id, round, wins, lives, ring_json, created_at FROM snapshots
+      `SELECT id, round, wins, lives, ring_json, team_name, created_at FROM snapshots
        WHERE round = ? ORDER BY created_at DESC LIMIT ?`,
     ).bind(round, FETCH_LIMIT);
 
@@ -97,6 +102,7 @@ async function handleFetch(request, env, origin) {
     round: row.round,
     wins: row.wins,
     lives: row.lives,
+    teamName: row.team_name || '',
     createdAt: row.created_at,
     ring: JSON.parse(row.ring_json),
   }));

@@ -64,6 +64,17 @@ jobs:
       - name: Apply schema (idempotent — CREATE TABLE IF NOT EXISTS)
         run: npx wrangler d1 execute relaymonsters-db --remote --file=schema.sql
 
+      # D1(SQLite)은 ADD COLUMN IF NOT EXISTS 를 지원하지 않으므로, 이미 배포된 DB에
+      # team_name 컬럼이 없을 때만 추가한다. "duplicate column" 오류는 이미 있다는 뜻이라 무시한다.
+      - name: Add team_name column if missing (older deployed DBs)
+        run: |
+          OUT=$(npx wrangler d1 execute relaymonsters-db --remote --command="ALTER TABLE snapshots ADD COLUMN team_name TEXT" 2>&1) || true
+          echo "$OUT"
+          if echo "$OUT" | grep -qi "error" && ! echo "$OUT" | grep -qi "duplicate column"; then
+            echo "::error::team_name 컬럼 추가 실패"
+            exit 1
+          fi
+
       - name: Deploy Worker
         run: npx wrangler deploy | tee deploy.log
 
@@ -93,7 +104,7 @@ jobs:
           SNAP_ID="s_ci_smoke_$(date +%s)"
           curl -sf -X POST "$URL/api/snapshots" \
             -H "Content-Type: application/json" -H "X-Owner-Id: ci-smoke-test" \
-            -d "{\"snapshotId\":\"$SNAP_ID\",\"round\":1,\"wins\":1,\"lives\":3,\"ring\":[{\"speciesId\":\"T1-01\",\"exp\":1}]}" \
+            -d "{\"snapshotId\":\"$SNAP_ID\",\"round\":1,\"wins\":1,\"lives\":3,\"teamName\":\"CI 스모크팀\",\"ring\":[{\"speciesId\":\"T1-01\",\"exp\":1}]}" \
             | tee upload.json
           echo
           echo "-- fetch (다른 owner 로 조회, 방금 올린 스냅샷이 보여야 함) --"
@@ -106,10 +117,14 @@ jobs:
             const upload = JSON.parse(fs.readFileSync('upload.json', 'utf8'));
             if (!upload.ok) throw new Error('upload failed: ' + JSON.stringify(upload));
             const fetched = JSON.parse(fs.readFileSync('fetch.json', 'utf8'));
-            if (!Array.isArray(fetched) || !fetched.some((s) => s.snapshotId === '$SNAP_ID')) {
+            const found = Array.isArray(fetched) && fetched.find((s) => s.snapshotId === '$SNAP_ID');
+            if (!found) {
               throw new Error('업로드한 스냅샷을 조회 결과에서 찾지 못했습니다: ' + JSON.stringify(fetched));
             }
-            console.log('스모크 테스트 통과 — 업로드/조회 라운드 트립 확인됨');
+            if (found.teamName !== 'CI 스모크팀') {
+              throw new Error('teamName 이 왕복되지 않았습니다: ' + JSON.stringify(found));
+            }
+            console.log('스모크 테스트 통과 — 업로드/조회 라운드 트립 확인됨 (teamName 포함)');
           "
           echo "### 스모크 테스트" >> "$GITHUB_STEP_SUMMARY"
           echo "헬스체크·업로드·조회 라운드 트립 통과" >> "$GITHUB_STEP_SUMMARY"
