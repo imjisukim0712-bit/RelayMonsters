@@ -4,12 +4,18 @@ import { mountSpriteSheet } from './art/symbols.js';
 import { startApp } from './ui/app.js';
 import { loadSave } from './storage/save.js';
 
-// ── Firebase 연결 지점 (내일 작업) ────────────────────────────────
-// 아래 두 줄의 주석을 해제하고 firebaseBackend.js 의 FIREBASE_CONFIG 를 채우면
-// 비동기 멀티가 로컬 스냅샷 대신 서버 스냅샷을 사용한다. 그 외 코드는 변경하지 않는다.
+// ── 백엔드 연결 지점 ────────────────────────────────────────────
+// 둘 중 하나만 선택해서 주석을 해제한다. 그 외 게임 코드는 변경하지 않는다.
+// 아무것도 켜지 않으면 로컬 스냅샷 + 프리셋 봇 폴백으로 동작한다.
 //
+// 옵션 A) Firebase — firebaseBackend.js 의 FIREBASE_CONFIG 를 채운 뒤:
 // import { enableFirebaseBackend } from './storage/firebaseBackend.js';
 // await enableFirebaseBackend().catch((e) => console.warn('Firebase 미연결 — 로컬 모드', e));
+//
+// 옵션 B) Cloudflare (Worker + D1) — server/ 를 배포하고 cloudflareBackend.js 의
+// WORKER_URL 을 배포된 주소로 바꾼 뒤:
+// import { enableCloudflareBackend } from './storage/cloudflareBackend.js';
+// await enableCloudflareBackend().catch((e) => console.warn('Cloudflare 미연결 — 로컬 모드', e));
 
 function boot() {
   loadSave();

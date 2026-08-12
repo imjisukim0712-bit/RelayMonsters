@@ -7,7 +7,7 @@
 
 ## 구현 범위
 
-기획서 v0.6 기준으로 **Firebase 연결을 제외한 전부**가 구현되어 있다.
+기획서 v0.6 기준으로 **실 서버 배포(계정 로그인이 필요한 단계)를 제외한 전부**가 구현되어 있다.
 
 | 영역 | 상태 |
 |---|---|
@@ -22,31 +22,47 @@
 | 코인 · 배경 상점 6종 · 도감 · 규칙 화면 | ✅ |
 | 회전 시 원호 바운스 이동 · 배속 1×/2×/4× · 트리거 배지 | ✅ |
 | 스냅샷 저장 · 비동기 멀티 매칭 (로컬 저장소) | ✅ |
-| **Firebase 서버 연동** | ⏳ 어댑터 자리만 준비됨 |
+| Firebase 서버 연동 | ⏳ 어댑터 자리만 준비됨 |
+| **Cloudflare Worker + D1 서버 연동** | ⏳ 서버 완성·로컬 검증 완료, 실 배포(로그인 필요)만 대기 |
 
-## Firebase 연결 (다음 작업)
+## 백엔드 연결
 
 게임 코드는 스냅샷 업로드/다운로드를 `src/storage/backend.js` 의 어댑터 인터페이스로만 호출한다.
-연결에 필요한 변경은 다음 3단계뿐이다.
+연결 전에는 자동으로 로컬 스냅샷 + 프리셋 봇 폴백으로 동작하며, 두 백엔드 중 하나를 골라 붙이면 된다.
+
+### 옵션 A — Firebase (미연결)
 
 1. `src/storage/firebaseBackend.js` 의 `FIREBASE_CONFIG` 를 실제 프로젝트 값으로 채운다.
-2. `src/main.js` 상단의 두 줄 주석을 해제한다.
-   ```js
-   import { enableFirebaseBackend } from './storage/firebaseBackend.js';
-   await enableFirebaseBackend().catch((e) => console.warn('Firebase 미연결 — 로컬 모드', e));
-   ```
+2. `src/main.js` 상단의 옵션 A 두 줄 주석을 해제한다.
 3. Firestore 에 `snapshots` 컬렉션을 만들고 `(round ASC, wins ASC)` 복합 인덱스를 추가한다.
    읽기는 공개, 쓰기는 인증된 사용자로 제한한다.
 
-스냅샷 문서 형태는 기획서 14.3 과 동일하며 `makeSnapshot()` 이 그대로 생성한다.
-연결 전에는 자동으로 로컬 스냅샷 + 프리셋 봇 폴백으로 동작한다.
+### 옵션 B — Cloudflare Worker + D1 (서버 코드 완성·로컬 검증 완료, 실 배포 대기)
+
+`server/` 에 Worker + D1 백엔드가 구현되어 있고 `wrangler dev --local` 로 오프라인
+검증까지 마쳤다(업로드/조회 라운드 트립, 자기 스냅샷 필터, 입력 검증, CORS, 실제 브라우저
+플레이 승리 → 네트워크 요청 → D1 저장까지 end-to-end 확인). **실제 Cloudflare 계정으로의
+배포(`wrangler login`)는 사람이 직접 해야 하는 단계**라 여기까지는 되어 있지 않다.
+
+```bash
+cd server && npm install
+npx wrangler login
+npx wrangler d1 create relaymonsters-db   # 출력된 database_id 를 wrangler.toml 에 반영
+npm run db:init:remote
+npm run deploy                             # workers.dev 주소가 출력된다
+```
+
+배포 후 `src/storage/cloudflareBackend.js` 의 `WORKER_URL` 을 그 주소로 바꾸고,
+`src/main.js` 상단의 옵션 B 두 줄 주석을 해제한다. 자세한 내용은 `server/README.md` 참고.
+
+스냅샷 형태는 두 백엔드 모두 기획서 14.3 과 동일하며 `makeSnapshot()` 이 그대로 생성한다.
 
 ## 구조
 
 ```
 index.html · styles.css
 src/
-  main.js                 부트스트랩 (Firebase 연결 지점)
+  main.js                 부트스트랩 (백엔드 연결 지점)
   data/    species.js     로스터 60종 + 능력 데이터
            items.js       소모품 9종 · 아이템 부여 능력
            bots.js        프리셋 봇 54개 (결정론적 생성)
@@ -61,7 +77,8 @@ src/
            rng.js         시드 RNG
   storage/ save.js        localStorage 세이브 (v3)
            backend.js     멀티 백엔드 추상화
-           firebaseBackend.js  Firebase 어댑터 (미연결)
+           firebaseBackend.js   Firebase 어댑터 (미연결)
+           cloudflareBackend.js Cloudflare 어댑터 (서버 완성, 배포 대기)
   art/     symbols.js     60종 SVG symbol 시트
            items.js       소모품 아이콘
            backgrounds.js 배경 레이어
@@ -69,6 +86,8 @@ src/
            battleScene.js 전투 재생 (원호 바운스 회전)
            shopScene.js   상점 (드래그 구매·합치기·판매·순서 변경)
            lobby.js  bgShop.js  codex.js  unitView.js  dom.js
+server/                   Cloudflare Worker + D1 (별도 README)
+  wrangler.toml  schema.sql  src/index.js
 ```
 
 전투 규칙과 연출은 완전히 분리되어 있다. `simulateBattle()` 은 DOM 없이 실행 가능한

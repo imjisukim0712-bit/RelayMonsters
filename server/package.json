@@ -1,0 +1,15 @@
+{
+  "name": "relaymonsters-backend",
+  "version": "1.0.0",
+  "description": "Relay Monsters 비동기 멀티 스냅샷 백엔드 (Cloudflare Worker + D1)",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "db:init:local": "wrangler d1 execute relaymonsters-db --local --file=schema.sql",
+    "db:init:remote": "wrangler d1 execute relaymonsters-db --remote --file=schema.sql",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "wrangler": "^4.121.0"
+  }
+}

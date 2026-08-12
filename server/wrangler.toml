@@ -1,0 +1,10 @@
+name = "relaymonsters-backend"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "relaymonsters-db"
+# 아래 database_id 는 로컬 개발용 자리표시자다.
+# 실제 배포 전에 `wrangler d1 create relaymonsters-db` 로 만든 실제 ID로 바꿔야 한다.
+database_id = "00000000-0000-0000-0000-000000000000"
