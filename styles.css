@@ -1598,7 +1598,7 @@ html, body {
 .unit-level-badge {
   position: absolute;
   left: 50%;
-  top: 41px;
+  top: 16px;
   z-index: 7;
   transform: translateX(-50%);
   display: flex;
@@ -1639,7 +1639,7 @@ html, body {
     position: absolute;
     left: 3.2%;
     right: 1.7%;
-    top: 4.35%;
+    top: calc(4.35% - 25px);
     min-height: 0;
     height: 8.9%;
     padding: 0;
