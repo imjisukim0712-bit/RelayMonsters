@@ -1,6 +1,6 @@
 // 씬 라우터
 
-import { renderLobby, renderRunEnd, promptTeamName } from './lobby.js';
+import { renderLobby, renderRunEnd, promptTeamName, showTutorial } from './lobby.js';
 import { renderShop } from './shopScene.js';
 import { playBattle } from './battleScene.js';
 import { renderBgShop } from './bgShop.js';
@@ -125,6 +125,9 @@ export function startApp(root) {
   }
 
   goLobby();
+  if (!getMeta().seenTutorial) {
+    showTutorial(() => updateMeta({ seenTutorial: true }));
+  }
   return { goLobby, goShop };
 }
 
