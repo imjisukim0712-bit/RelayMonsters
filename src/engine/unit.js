@@ -31,7 +31,11 @@ export function expToNextLevel(exp) {
 
 export function levelProgress(exp) {
   const lv = levelFromExp(exp);
-  if (lv >= MAX_LEVEL) return { lv, inLevel: 0, need: 0, ratio: 1 };
+  if (lv >= MAX_LEVEL) {
+    // 최대 레벨은 다음 구간이 없으니 마지막 구간 칸 수를 그대로 채워서 보여준다
+    const need = LEVEL_THRESHOLDS[MAX_LEVEL - 1] - LEVEL_THRESHOLDS[MAX_LEVEL - 2];
+    return { lv, inLevel: need, need, ratio: 1 };
+  }
   const floorExp = LEVEL_THRESHOLDS[lv - 1];
   const ceilExp = LEVEL_THRESHOLDS[lv];
   return { lv, inLevel: exp - floorExp, need: ceilExp - floorExp, ratio: (exp - floorExp) / (ceilExp - floorExp) };

@@ -1588,27 +1588,36 @@ html, body {
 .unit-level-badge {
   position: absolute;
   left: 50%;
-  top: -28px;
+  top: -19px;
   z-index: 7;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
+  gap: 5px;
   color: var(--out);
   white-space: nowrap;
   text-shadow: 0 2px 0 rgba(255,255,255,.9);
 }
 .unit-level-badge b { font-size: 17px; font-weight: 1000; }
-.unit-level-badge > span {
-  width: 52px;
+.unit-level-badge .lv-bar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
   height: 9px;
-  overflow: hidden;
+  padding: 1px;
   border: 2px solid var(--out);
   border-radius: 3px;
   background: rgba(255,248,232,.9);
 }
-.unit-level-badge i { display: block; height: 100%; background: var(--tier); }
+.unit-level-badge .lv-bar i {
+  display: block;
+  width: 6px;
+  height: 100%;
+  border-radius: 1px;
+  background: rgba(37,49,74,.18);
+}
+.unit-level-badge .lv-bar i.filled { background: var(--tier); }
 
 @media (min-width: 1051px) and (min-aspect-ratio: 4 / 3) {
   .shop-scene {
