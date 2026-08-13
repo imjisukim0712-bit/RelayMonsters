@@ -330,7 +330,7 @@ export const SPECIES_LIST = [
   {
     id: 'T5-04', name: '피닉스', tier: 5, atk: 13, hp: 6, art: 'phoenix',
     silhouette: '불꽃 깃 날개 + 길게 늘어진 꼬리깃',
-    ability: A('ON_DEATH', { op: 'revive', target: 'self' }, pct(40, 70, 100), { oncePerBattle: true }),
+    ability: A('ON_DEATH', { op: 'summon', self: true }, pct(40, 70, 100), { oncePerBattle: true }),
   },
   {
     id: 'T5-05', name: '악마', tier: 5, atk: 15, hp: 2, art: 'demon',

@@ -388,12 +388,23 @@ function applyEffect(state, unit, effect, ctx) {
 function doSummon(state, parent, effect) {
   const team = state.teams[parent.team];
   if (team.units.filter((u) => u.alive).length >= MAX_RING) return; // 링이 꽉 차면 소환하지 않는다
-  const s = makeSummon({ id: 'SUM-01', name: effect.name, art: effect.art, tier: 1 }, effect.atk, effect.hp, parent.team);
+  let s;
+  if (effect.self) {
+    // 자기 자신 재소환 — 원래 최대 체력은 유지한 채, 지정한 비율만큼 체력을 채워 새 개체로 등장한다.
+    // 새 개체는 능력을 물려받지 않아 같은 전투에서 무한히 재소환되지 않는다.
+    const hp = Math.max(1, Math.round((parent.maxHp * effect.pct) / 100));
+    s = makeSummon({ id: parent.speciesId, name: parent.name, art: parent.art, tier: parent.tier }, parent.atk, hp, parent.team);
+    s.maxHp = parent.maxHp;
+    s.level = parent.level;
+    s.abilKey = parent.abilKey;
+  } else {
+    s = makeSummon({ id: 'SUM-01', name: effect.name, art: effect.art, tier: effect.tier || 1 }, effect.atk, effect.hp, parent.team);
+  }
   const idx = team.units.indexOf(parent);
   const at = idx >= 0 ? idx + 1 : team.units.length;
   team.units.splice(at, 0, s);
   if (at <= team.frontIdx) team.frontIdx += 1;
-  emit(state, 'summon', { uid: s.uid, parentUid: parent.uid });
+  emit(state, 'summon', { uid: s.uid, parentUid: parent.uid, self: !!effect.self });
 }
 
 // ── 트리거 ────────────────────────────────────────────────────────

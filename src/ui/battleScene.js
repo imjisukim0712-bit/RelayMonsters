@@ -422,6 +422,7 @@ export function playBattle(root, {
           if (ev.type === 'compress' && !skip) await animateRotation(reduced ? 120 : 260 / mult);
           else place(true);
           if (ev.type === 'revive' && !skip) { pulse(ev.uid, 'shielded', 700); floatText(ev.uid, '부활', 'heal'); }
+          if (ev.type === 'summon' && ev.self && !skip) { pulse(ev.uid, 'shielded', 700); floatText(ev.uid, '재소환', 'heal'); }
           break;
         case 'battle_start':
           ensureUnits(ev.snap);

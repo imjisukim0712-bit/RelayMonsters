@@ -102,7 +102,9 @@ export function effectText(effect, bare = false) {
     case 'debuffAtk':
       return `${t} 공격력 -${effect.amount}`;
     case 'summon':
-      return `${effect.atk}/${effect.hp} ${effect.name} 소환`;
+      return effect.self
+        ? `체력 ${effect.pct}%로 자신을 재소환`
+        : `${effect.atk}/${effect.hp} ${effect.name} 소환`;
     case 'revive':
       return `체력 ${effect.pct}%로 부활`;
     case 'markDamageUp':
