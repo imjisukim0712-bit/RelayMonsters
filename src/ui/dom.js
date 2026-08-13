@@ -15,12 +15,16 @@ export function el(tag, attrs = {}, html = '') {
 }
 
 let toastHost = null;
+const MAX_VISIBLE_TOASTS = 3;
 export function toast(msg, kind = 'info', ms = 2200) {
   if (!msg) return;
   if (!toastHost) {
     toastHost = el('div', { id: 'toasts', 'aria-live': 'polite' });
     document.body.appendChild(toastHost);
   }
+  // 연속 조작(연속 판매·구매 등)으로 안내가 무한정 쌓이지 않도록 오래된 것부터 정리한다
+  const existing = toastHost.querySelectorAll('.toast');
+  for (let i = 0; i <= existing.length - MAX_VISIBLE_TOASTS; i += 1) existing[i].remove();
   const t = el('div', { class: `toast toast-${kind}` }, msg);
   toastHost.appendChild(t);
   requestAnimationFrame(() => t.classList.add('in'));

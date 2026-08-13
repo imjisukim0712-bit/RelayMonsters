@@ -167,6 +167,7 @@ function resolveTargets(state, unit, effect, ctx) {
     }
     case 'neighbors': return neighborUnits(ownTeam(state, unit), unit).filter(alive);
     case 'killedBy': return alive(unit.killedBy) ? [unit.killedBy] : [];
+    case 'summonedUnit': return alive(ctx.summonedUnit) ? [ctx.summonedUnit] : [];
     // 연금술사(마나 공급 유닛) 전용 대상 — 마나 유닛이 아닌 아군은 걸러낸다 (6.2절)
     case 'frontManaUnit': {
       const t = aheadUnit(ownTeam(state, unit), unit);
@@ -387,13 +388,31 @@ function applyEffect(state, unit, effect, ctx) {
 
 function doSummon(state, parent, effect) {
   const team = state.teams[parent.team];
-  if (team.units.filter((u) => u.alive).length >= MAX_RING) return; // 링이 꽉 차면 소환하지 않는다
-  const s = makeSummon({ id: 'SUM-01', name: effect.name, art: effect.art, tier: 1 }, effect.atk, effect.hp, parent.team);
-  const idx = team.units.indexOf(parent);
-  const at = idx >= 0 ? idx + 1 : team.units.length;
-  team.units.splice(at, 0, s);
-  if (at <= team.frontIdx) team.frontIdx += 1;
-  emit(state, 'summon', { uid: s.uid, parentUid: parent.uid });
+  const foes = state.teams[1 - parent.team];
+  const count = effect.count || 1;
+  for (let n = 0; n < count; n += 1) {
+    if (team.units.filter((u) => u.alive).length >= MAX_RING) break; // 링이 꽉 차면 더 소환하지 않는다
+    let s;
+    if (effect.self) {
+      // 자기 자신 재소환 — 지정한 비율만큼 체력(및 scaleAtk 시 공격력)을 채워 새 개체로 등장한다.
+      // 새 개체는 능력을 물려받지 않아 같은 전투에서 무한히 재소환되지 않는다.
+      const hp = Math.max(1, Math.round((parent.maxHp * effect.pct) / 100));
+      const atk = effect.scaleAtk ? Math.max(1, Math.round((parent.atk * effect.pct) / 100)) : parent.atk;
+      s = makeSummon({ id: parent.speciesId, name: parent.name, art: parent.art, tier: parent.tier }, atk, hp, parent.team);
+      s.maxHp = effect.scaleAtk ? hp : parent.maxHp;
+      s.level = parent.level;
+      s.abilKey = parent.abilKey;
+    } else {
+      s = makeSummon({ id: 'SUM-01', name: effect.name, art: effect.art, tier: effect.tier || 1 }, effect.atk, effect.hp, parent.team);
+    }
+    const idx = team.units.indexOf(parent);
+    const at = idx >= 0 ? idx + 1 : team.units.length;
+    team.units.splice(at, 0, s);
+    if (at <= team.frontIdx) team.frontIdx += 1;
+    emit(state, 'summon', { uid: s.uid, parentUid: parent.uid, self: !!effect.self });
+    for (const a of team.units) if (a !== s && a.alive) fireOn(state, a, 'ON_ALLY_SUMMON', { summonedUnit: s });
+    for (const e of foes.units) if (e.alive) fireOn(state, e, 'ON_ENEMY_SUMMON', { summonedUnit: s });
+  }
 }
 
 // ── 트리거 ────────────────────────────────────────────────────────

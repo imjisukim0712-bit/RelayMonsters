@@ -43,6 +43,7 @@ export function targetName(effect) {
     case 'neighbors': return '앞 유닛과 뒤 유닛';
     case 'itemTarget': return '아이템 대상';
     case 'killedBy': return '자신을 처치한 적';
+    case 'summonedUnit': return '소환된 유닛';
     default: return '대상';
   }
 }
@@ -101,8 +102,14 @@ export function effectText(effect, bare = false) {
       return `${iga(t)} ${statPhrase(effect, true)}`;
     case 'debuffAtk':
       return `${t} 공격력 -${effect.amount}`;
-    case 'summon':
-      return `${effect.atk}/${effect.hp} ${effect.name} 소환`;
+    case 'summon': {
+      const times = effect.count > 1 ? ` ${effect.count}기` : '';
+      if (effect.self) {
+        const atkPart = effect.scaleAtk ? `공격력·체력 ${effect.pct}%로` : `체력 ${effect.pct}%로`;
+        return `${atkPart} 자신을${times} 재소환`;
+      }
+      return `${effect.atk}/${effect.hp} ${effect.name}${times} 소환`;
+    }
     case 'revive':
       return `체력 ${effect.pct}%로 부활`;
     case 'markDamageUp':

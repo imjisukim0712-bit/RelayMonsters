@@ -103,16 +103,19 @@ function applyShopEffect(ring, unit, effect, ctx, rng, out) {
 }
 
 // 상점 트리거 발동. ring 은 런의 링 배열, unit 은 능력을 가진 유닛.
+// 대상별 결과 문구(out)가 나오면 그걸로 충분하므로 능력 설명 문구는 생략한다 —
+// 둘 다 보여주면 같은 효과를 두 번 알리는 셈이라 팝업이 불필요하게 늘어난다.
 export function fireShopTrigger(ring, unit, trigger, ctx = {}, rng = Math.random) {
-  const out = [];
   const lines = [];
   const level = unitLevel(unit);
   for (const ability of unitAbilities(unit)) {
     if (ability.trigger !== trigger) continue;
     const eff = abilityEffect(ability, level);
     if (!eff) continue;
-    lines.push(`${unitName(unit)} · ${triggerName(trigger)} → ${effectText(eff)}`);
+    const out = [];
     applyShopEffect(ring, unit, eff, ctx, rng, out);
+    if (out.length) lines.push(...out);
+    else lines.push(`${unitName(unit)} · ${triggerName(trigger)} → ${effectText(eff)}`);
   }
-  return [...lines, ...out];
+  return lines;
 }
