@@ -273,7 +273,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       const w = node.offsetWidth;
       const h = node.offsetHeight;
       const left = Math.max(0, Math.min(x - w / 2, rect.width - w));
-      const top = Math.max(0, Math.min(y - bodyH, rect.height - h));
+      const top = Math.min(Math.max(0, Math.min(y - bodyH, rect.height - h)) + 25, rect.height - h);
       node.style.left = `${left}px`;
       node.style.top = `${top}px`;
       // 위쪽 유닛이 아래쪽 유닛에 가리지 않도록 y 순서로 쌓는다
