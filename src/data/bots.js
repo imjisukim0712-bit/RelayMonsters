@@ -35,13 +35,12 @@ export function shopTierForRound(round) {
   return Math.min(6, Math.max(1, Math.ceil(round / 3)));
 }
 
-// 라운드별 봇 편성 크기 — 초반은 작은 링, 중반부터 만석까지 섞는다.
+// 라운드별 봇 편성 크기 — 초반은 작은 링, 라운드 10부터는 항상 6칸 만석.
 function ringSizeFor(round, rng) {
   if (round <= 3) return 2 + rng.int(2); // 2~3
   if (round <= 6) return 3 + rng.int(2); // 3~4
   if (round <= 9) return 4 + rng.int(2); // 4~5
-  if (round <= 12) return 4 + rng.int(3); // 4~6
-  return 3 + rng.int(4); // 3~6 (압축·만석 노선 혼재)
+  return 6;
 }
 
 // 라운드별 총 경험치 예산. 완주 기준 유효 경험치 약 45를 라운드에 비례 배분한다.
