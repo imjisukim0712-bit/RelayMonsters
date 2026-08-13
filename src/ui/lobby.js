@@ -11,6 +11,52 @@ import { modal, escapeHtml } from './dom.js';
 
 const SHOWCASE = ['dragonrider', 'phoenix', 'kraken', 'minotaur', 'unicorn'];
 
+// 최초 접속 시 보여주는 간단한 진행 안내
+const TUTORIAL_STEPS = [
+  {
+    title: 'RelayMonsters에 오신 걸 환영합니다',
+    body: '원형 링 위에서 몬스터들이 매 턴 배턴을 넘기며 싸우는 회전 오토배틀러입니다.',
+  },
+  {
+    title: '상점에서 몬스터 모으기',
+    body: '골드로 몬스터를 구매해 필드에 배치하세요. 같은 몬스터를 겹치면 하나로 합쳐지며 레벨이 오르고 능력이 강해집니다.',
+  },
+  {
+    title: '자동으로 진행되는 전투',
+    body: '웨이브를 진행하면 전투가 자동으로 재생됩니다. 매 턴 링이 회전하며 전선에 선 유닛끼리 맞붙어요.',
+  },
+  {
+    title: '승리 조건',
+    body: '전투에서 이기면 라운드가 오르고, 지면 생명이 줄어듭니다. 생명이 모두 소진되면 게임 오버, 18라운드를 모두 승리하면 클리어예요.',
+  },
+];
+
+export function showTutorial(onDone) {
+  let step = 0;
+  const stepHtml = () => {
+    const s = TUTORIAL_STEPS[step];
+    const isLast = step === TUTORIAL_STEPS.length - 1;
+    return `<div class="tutorial">
+      <div class="tutorial-dots">${TUTORIAL_STEPS.map((_, i) => `<span class="dot${i === step ? ' active' : ''}"></span>`).join('')}</div>
+      <h3>${s.title}</h3>
+      <p>${s.body}</p>
+      <div class="confirm-actions">
+        ${step > 0 ? '<button class="btn ghost" data-act="prev">이전</button>' : ''}
+        <button class="btn primary" data-act="${isLast ? 'done' : 'next'}">${isLast ? '시작하기' : '다음'}</button>
+      </div>
+    </div>`;
+  };
+
+  const m = modal(stepHtml(), { onClose: () => onDone && onDone() });
+  m.box.addEventListener('click', (e) => {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    if (act === 'next') { step += 1; m.box.querySelector('.tutorial').outerHTML = stepHtml(); }
+    else if (act === 'prev') { step -= 1; m.box.querySelector('.tutorial').outerHTML = stepHtml(); }
+    else if (act === 'done') { m.close(); }
+  });
+}
+
 export function renderLobby(root, { hasRun, onContinue, onNewRun, onBgShop, onCodex, onRules }) {
   const meta = getMeta();
   const bg = backgroundById(meta.selectedBackground);

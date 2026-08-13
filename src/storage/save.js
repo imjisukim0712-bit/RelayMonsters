@@ -17,6 +17,7 @@ function defaultMeta() {
     totalRuns: 0,
     seenSpecies: [],
     teamName: '',
+    seenTutorial: false,
   };
 }
 
