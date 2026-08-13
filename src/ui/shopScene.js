@@ -245,6 +245,7 @@ export function renderShop(root, { run, backgroundId = 'bg_grass', onStartBattle
       if (next === uw) break;
       uw = next;
     }
+    uw *= 0.85; // 필드 유닛 크기 15% 축소
     const spots = spotsFor(uw);
     const compact = uw < 86;
 
