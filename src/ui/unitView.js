@@ -41,10 +41,21 @@ export function levelPips(level) {
   return `<span class="lv" aria-label="레벨 ${level}">Lv${level}${level >= 5 ? '' : ''}</span>`;
 }
 
+// 경험치 진행도를 칸 단위로 표시 — 몇 칸 중 몇 칸이 찼는지 한눈에 보이게 한다
+function expCells(need, inLevel) {
+  const total = Math.max(1, need);
+  let out = '';
+  for (let i = 0; i < total; i++) {
+    out += `<i class="${i < inLevel ? 'filled' : ''}"></i>`;
+  }
+  return out;
+}
+
 // 링·상점 공용 유닛 스탠드
 export function unitStand(view, opts = {}) {
   const {
-    tier, art, name, atk, hp, maxHp, shield = 0, level = 1, levelRatio = 0,
+    tier, art, name, atk, hp, maxHp, shield = 0, level = 1,
+    levelNeed = 1, levelInLevel = 0,
     manaUnit = false, mana = 0, maxMana = 10,
   } = view;
   const color = TIER_COLORS[tier] || '#8CC63F';
@@ -55,7 +66,7 @@ export function unitStand(view, opts = {}) {
 
   return `<div class="${cls}" data-uid="${view.uid || ''}" data-id="${opts.id || ''}" style="--tier:${color}">
     <div class="unit-shadow"></div>
-    ${opts.showLevelBadge ? `<div class="unit-level-badge"><b>Lv.${level}</b><span><i style="width:${Math.round(levelRatio * 100)}%"></i></span></div>` : ''}
+    ${opts.showLevelBadge ? `<div class="unit-level-badge"><b>Lv.${level}</b><span class="lv-bar">${expCells(levelNeed, levelInLevel)}</span></div>` : ''}
     <div class="unit-body">${sprite(art)}</div>
     ${opts.hitArea === false ? '' : '<div class="unit-hit" aria-hidden="true"></div>'}
     <div class="unit-foot">
@@ -70,6 +81,7 @@ export function unitStand(view, opts = {}) {
 export function viewFromRunUnit(u) {
   const sp = unitSpecies(u);
   const abil = unitAbilities(u)[0];
+  const prog = levelProgress(u.exp);
   return {
     uid: u.id,
     speciesId: u.speciesId,
@@ -81,7 +93,9 @@ export function viewFromRunUnit(u) {
     maxHp: unitHp(u),
     shield: 0,
     level: unitLevel(u),
-    levelRatio: levelProgress(u.exp).ratio,
+    levelRatio: prog.ratio,
+    levelNeed: prog.need,
+    levelInLevel: prog.inLevel,
     trigger: abil?.trigger || null,
     manaUnit: !!sp.manaUnit,
     mana: 0,
