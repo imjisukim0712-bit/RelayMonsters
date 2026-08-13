@@ -19,6 +19,8 @@ export const TRIGGERS = {
   ON_LAP: '한 바퀴',
   ON_SELL: '판매',
   ON_ITEM_USE: '아이템 사용',
+  ON_ALLY_SUMMON: '아군 소환',
+  ON_ENEMY_SUMMON: '적 소환',
 };
 
 export const TIER_COLORS = {
@@ -188,6 +190,11 @@ export const SPECIES_LIST = [
     silhouette: '작은 수중형 + 소라 악기',
     ability: A('ON_LAP', { op: 'heal', target: 'allAlly' }, amt(2, 3, 4)),
   },
+  {
+    id: 'T2-11', name: '다람쥐지기', tier: 2, atk: 3, hp: 9, art: 'squirrelKeeper',
+    silhouette: '복슬 꼬리 목도리 + 뾰족한 두건',
+    ability: A('ON_ALLY_SUMMON', { op: 'buff', target: 'self' }, atkUp(1, 2, 3)),
+  },
 
   // ═══ 티어 3 — 한 몫 하는 것들 (예산 20) ═══
   {
@@ -250,6 +257,11 @@ export const SPECIES_LIST = [
     ability: A('ON_ITEM_USE', { op: 'permBuff', target: 'neighbors' },
       [{ atk: 1, hp: 0 }, { atk: 1, hp: 1 }, { atk: 2, hp: 2 }]),
   },
+  {
+    id: 'T3-11', name: '포자버섯', tier: 3, atk: 5, hp: 10, art: 'sporeShroom',
+    silhouette: '거대한 우산 갓 + 퍼지는 포자구름',
+    ability: A('ON_ENEMY_SUMMON', { op: 'damage', target: 'summonedUnit' }, amt(3, 5, 7)),
+  },
 
   // ═══ 티어 4 — 강자 (예산 25) ═══
   {
@@ -309,6 +321,18 @@ export const SPECIES_LIST = [
     id: 'T4-10', name: '골렘', tier: 4, atk: 5, hp: 15, art: 'golem',
     silhouette: '쌓은 바위 관절 + 두꺼운 팔',
     ability: A('ON_DAMAGED', { op: 'buff', target: 'self' }, atkUp(1, 2, 3)),
+  },
+  {
+    id: 'T4-11', name: '네크로맨서', tier: 4, atk: 7, hp: 11, art: 'necromancer',
+    silhouette: '해골 지팡이 + 너덜너덜한 후드',
+    ability: A('ON_ALLY_DEATH', { op: 'summon', name: '해골전사', art: 'skeleton', tier: 1 },
+      [{ atk: 4, hp: 4 }, { atk: 6, hp: 6 }, { atk: 8, hp: 8 }]),
+  },
+  {
+    id: 'T4-12', name: '슬라임 여왕', tier: 4, atk: 5, hp: 15, art: 'slimeQueen',
+    silhouette: '왕관 형 돌기 + 넘실대는 몸',
+    ability: A('ON_DAMAGED', { op: 'summon', name: '미니 슬라임', art: 'slimeMini', tier: 1 },
+      [{ atk: 2, hp: 2 }, { atk: 3, hp: 3 }, { atk: 4, hp: 4 }], { oncePerTurn: true }),
   },
 
   // ═══ 티어 5 — 전설 (예산 32) ═══
@@ -387,6 +411,12 @@ export const SPECIES_LIST = [
     id: 'T5-10', name: '드레이크', tier: 5, atk: 12, hp: 8, art: 'drake',
     silhouette: '가죽 날개 + 네 다리와 긴 목',
     ability: A('ON_AFTER_ATTACK', { op: 'nextAttackBonus', target: 'backUnit' }, amt(3, 5, 7)),
+  },
+  {
+    id: 'T5-11', name: '주작', tier: 5, atk: 11, hp: 10, art: 'vermillionBird',
+    silhouette: '부챗살 꼬리깃 + 붉게 타오르는 날개',
+    ability: A('ON_KILL', { op: 'summon', name: '불사조 새끼', art: 'phoenix', tier: 1 },
+      [{ atk: 3, hp: 3 }, { atk: 5, hp: 5 }, { atk: 7, hp: 7 }]),
   },
 
   // ═══ 티어 6 — 신화 (예산 40) ═══
@@ -475,6 +505,11 @@ export const SPECIES_LIST = [
         },
       },
     }),
+  },
+  {
+    id: 'T6-11', name: '본드래곤', tier: 6, atk: 14, hp: 12, art: 'boneDragon',
+    silhouette: '뼈만 남은 날개 뼈대 + 드러난 척추 꼬리',
+    ability: A('ON_DEATH', { op: 'summon', self: true, scaleAtk: true, count: 2 }, pct(35, 50, 65), { oncePerBattle: true }),
   },
 ];
 
