@@ -35,9 +35,10 @@ export function shopTierForRound(round) {
   return Math.min(6, Math.max(1, Math.ceil(round / 3)));
 }
 
-// 라운드별 봇 편성 크기 — 초반은 작은 링, 라운드 10부터는 항상 6칸 만석.
+// 라운드별 봇 편성 크기 — 3라운드 이하는 항상 가장 작은 2기 편성으로 난이도를 낮게 고정하고,
+// 라운드 10부터는 항상 6칸 만석.
 function ringSizeFor(round, rng) {
-  if (round <= 3) return 2 + rng.int(2); // 2~3
+  if (round <= 3) return 2;
   if (round <= 6) return 3 + rng.int(2); // 3~4
   if (round <= 9) return 4 + rng.int(2); // 4~5
   return 6;
