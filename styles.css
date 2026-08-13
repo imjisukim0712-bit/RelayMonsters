@@ -1487,6 +1487,35 @@ html, body {
 .unit.tiny-unit .chip-atk .v,
 .unit.tiny-unit .chip-hp .v { font-size: 15px; }
 
+/* 상점 화면 체력·공격 아이콘 확대 — 골드 아이콘 정도 크기로, 압축(tiny) 상태에서도 유지 */
+.shop-scene .unit.tiny-unit .chip-atk,
+.shop-scene .pedestal.tiny-ped .chip-atk,
+.shop-scene .unit.tiny-unit .chip-hp,
+.shop-scene .pedestal.tiny-ped .chip-hp {
+  width: 46px;
+  min-width: 46px;
+  height: 44px;
+}
+.shop-scene .unit.tiny-unit .chip-atk .ico,
+.shop-scene .pedestal.tiny-ped .chip-atk .ico {
+  left: -12px;
+  top: -11px;
+  width: 30px;
+  height: 30px;
+}
+.shop-scene .unit.tiny-unit .chip-hp .ico,
+.shop-scene .pedestal.tiny-ped .chip-hp .ico {
+  inset: -5px -6px -6px;
+  width: 58px;
+  height: 58px;
+}
+.shop-scene .unit.tiny-unit .chip-atk .v,
+.shop-scene .unit.tiny-unit .chip-hp .v,
+.shop-scene .pedestal.tiny-ped .chip-atk .v,
+.shop-scene .pedestal.tiny-ped .chip-hp .v {
+  font-size: 18px;
+}
+
 /* ── Wide action bar ────────────────────────────────────────────
    Primary shop actions use the full dock width instead of stretching to the
    height of the market inventory column. */
