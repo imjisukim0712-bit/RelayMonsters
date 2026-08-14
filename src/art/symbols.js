@@ -3,10 +3,12 @@
 // 규칙
 //  · viewBox 0 0 512 512, 전신을 중앙 84% 안에 배치 (여백 8%)
 //  · 외곽선 14 / 내부 디테일 8, 선 색 #25314A
-//  · 한 부위 안은 반드시 단색. 그라디언트·텍스처·드롭섀도 없음
+//  · 원본 파츠는 단색으로 정의하고 premiumPolish 가 같은 색상군의 벡터 명암을 적용한다
 //  · 머리·몸통·이동에 필요한 부위가 실루엣에서 모두 읽혀야 한다
 //  · 기본 방향은 오른쪽(적을 향함). 링에서는 좌우 반전만 사용한다
 //  · 카드 배경·테두리·초상화 크롭을 넣지 않는다 (투명 배경 전신)
+
+import { premiumMarkup, premiumizeMarkup } from './premiumPolish.js';
 
 const OUT = '#25314A';
 const NS = 'stroke="none"';
@@ -907,8 +909,11 @@ export const ART_KEYS = Object.keys(S);
 export function symbolMarkup(key) {
   const fn = S[key];
   if (!fn) return '';
+  const polished = premiumizeMarkup(key, fn());
   return `<symbol id="sym-${key}" viewBox="0 0 512 512">`
-    + `<g stroke="${OUT}" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">${fn()}</g>`
+    + polished.defs
+    + `<g class="premium-base" stroke="${OUT}" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">${polished.body}</g>`
+    + premiumMarkup(key)
     + '</symbol>';
 }
 

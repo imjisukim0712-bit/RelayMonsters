@@ -12,11 +12,10 @@ import { hasArt } from '../art/symbols.js';
 
 export function sprite(artKey, extraClass = '') {
   const key = hasArt(artKey) ? artKey : 'slimeMini';
-  return `<svg class="sprite sprite-layered ${extraClass}" viewBox="0 0 512 512" aria-hidden="true">
+  return `<svg class="sprite sprite-layered art-${key} ${extraClass}" viewBox="0 0 512 512" aria-hidden="true">
     <ellipse class="sprite-ground" cx="256" cy="430" rx="132" ry="30"/>
     <use class="sprite-back" href="#sym-${key}"/>
     <use class="sprite-main" href="#sym-${key}"/>
-    <path class="sprite-shine" d="M154 152 q92 -72 198 -20"/>
   </svg>`;
 }
 

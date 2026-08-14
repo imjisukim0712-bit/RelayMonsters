@@ -782,13 +782,11 @@ html, body {
     drop-shadow(0 3px 0 rgba(255,255,255,.36))
     drop-shadow(0 8px 5px rgba(37,49,74,.20));
 }
-.sprite-shine {
-  fill: none;
-  stroke: rgba(255,255,255,.42);
-  stroke-width: 11;
-  stroke-linecap: round;
-  pointer-events: none;
-  opacity: .72;
+.premium-base { paint-order: stroke fill; }
+.premium-detail {
+  paint-order: stroke fill;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 .unit-body { transition: transform .18s ease, filter .18s ease; }
 .unit:hover .unit-body, .pedestal:hover .ped-unit { transform: translateY(-4px); }
