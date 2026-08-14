@@ -8,7 +8,8 @@
 //  · 기본 방향은 오른쪽(적을 향함). 링에서는 좌우 반전만 사용한다
 //  · 카드 배경·테두리·초상화 크롭을 넣지 않는다 (투명 배경 전신)
 
-import { premiumMarkup, premiumizeMarkup } from './premiumPolish.js';
+import { premiumizeMarkup } from './premiumPolish.js';
+import { buildChibiSymbols } from './chibiSymbols.js';
 
 const OUT = '#25314A';
 const NS = 'stroke="none"';
@@ -903,6 +904,10 @@ S.slimeMini = () => [
   det('M240 338 q16 12 32 0'),
 ].join('');
 
+// 예시 보드의 굵은 윤곽선·과장된 실루엣을 실제 구현 기준으로 사용한다.
+// 위 정의는 레거시 호환용으로 남기고, 모든 아트 키를 새 치비 벡터로 교체한다.
+Object.assign(S, buildChibiSymbols());
+
 // ── 심볼 시트 생성 ────────────────────────────────────────────────
 export const ART_KEYS = Object.keys(S);
 
@@ -913,7 +918,6 @@ export function symbolMarkup(key) {
   return `<symbol id="sym-${key}" viewBox="0 0 512 512">`
     + polished.defs
     + `<g class="premium-base" stroke="${OUT}" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">${polished.body}</g>`
-    + premiumMarkup(key)
     + '</symbol>';
 }
 
